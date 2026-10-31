@@ -53,7 +53,8 @@ jobs:
               cd $APP_DIR
               git pull origin main
             else
-              echo "Cloning repository..."
+              echo "Removing old directory and cloning fresh..."
+              rm -rf $APP_DIR
               git clone https://github.com/dara-tech/chat_go.git $APP_DIR
               cd $APP_DIR
             fi
