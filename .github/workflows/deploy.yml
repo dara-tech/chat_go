@@ -19,23 +19,30 @@ jobs:
         with:
           go-version: '1.24'
 
-      - name: Build binary
+      - name: Build Linux binary
         run: |
           cd backend
           CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o server_bin ./cmd/server/main.go
+          echo "Binary size: $(du -sh server_bin)"
 
-      - name: Copy binary to VPS
+      - name: Write .env file locally
+        run: |
+          printf '%s\n' "$ENV_FILE" | sed 's/^[[:space:]]*//' > backend/.env_deploy
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+
+      - name: Upload binary and .env to VPS
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           password: ${{ secrets.VPS_PASSWORD }}
           port: ${{ secrets.VPS_PORT }}
-          source: "backend/server_bin"
+          source: "backend/server_bin,backend/.env_deploy"
           target: "/opt/chat_go/"
           strip_components: 1
 
-      - name: Deploy on VPS
+      - name: Setup and restart on VPS
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -45,63 +52,44 @@ jobs:
           script: |
             set -e
 
-            # ── Install MySQL if missing ──────────────────────────
+            # ── MySQL: ensure DB exists ───────────────────────────
             if ! command -v mysql &>/dev/null; then
               echo "Installing MySQL..."
               apt-get update -qq
               DEBIAN_FRONTEND=noninteractive apt-get install -y mysql-server
               systemctl enable mysql
               systemctl start mysql
-              mysql -u root <<SQL
-            SET GLOBAL validate_password.policy = LOW;
-            SET GLOBAL validate_password.length = 6;
-            ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'ChatG0_DB#2026';
-            CREATE DATABASE IF NOT EXISTS chat_go_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-            FLUSH PRIVILEGES;
-            SQL
-              echo "✅ MySQL ready"
+              mysql -u root -e "SET GLOBAL validate_password.policy=LOW; ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'ChatG0_DB#2026'; CREATE DATABASE IF NOT EXISTS chat_go_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; FLUSH PRIVILEGES;"
             else
-              echo "MySQL already installed, ensuring DB exists..."
-              mysql -u root -p'ChatG0_DB#2026' -e "CREATE DATABASE IF NOT EXISTS chat_go_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" || true
+              mysql -u root -p'ChatG0_DB#2026' -e "CREATE DATABASE IF NOT EXISTS chat_go_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" 2>/dev/null || true
             fi
 
-            # ── Write .env (strip leading spaces from each line) ──
-            mkdir -p /opt/chat_go
-            printf '%s\n' '${{ secrets.ENV_FILE }}' | sed 's/^[[:space:]]*//' > /opt/chat_go/.env
-            echo "--- .env content ---"
-            cat /opt/chat_go/.env
-            echo "--------------------"
+            # ── Apply .env ────────────────────────────────────────
+            mv /opt/chat_go/.env_deploy /opt/chat_go/.env
 
             # ── Make binary executable ────────────────────────────
             chmod +x /opt/chat_go/server_bin
 
-            # ── Create systemd service ────────────────────────────
+            # ── Ensure systemd service exists ─────────────────────
             cat > /etc/systemd/system/chat_go.service <<EOF
-[Unit]
-Description=Chat Go Server
-After=network.target mysql.service
-Requires=mysql.service
+            [Unit]
+            Description=Chat Go Server
+            After=network.target mysql.service
 
-[Service]
-Type=simple
-WorkingDirectory=/opt/chat_go
-EnvironmentFile=/opt/chat_go/.env
-ExecStart=/opt/chat_go/server_bin
-Restart=always
-RestartSec=5
+            [Service]
+            Type=simple
+            WorkingDirectory=/opt/chat_go
+            EnvironmentFile=/opt/chat_go/.env
+            ExecStart=/opt/chat_go/server_bin
+            Restart=always
+            RestartSec=5
 
-[Install]
-WantedBy=multi-user.target
-EOF
+            [Install]
+            WantedBy=multi-user.target
+            EOF
 
-            # ── Reload and restart service ────────────────────────
             systemctl daemon-reload
             systemctl enable chat_go
             systemctl restart chat_go
-
-            sleep 3
-            systemctl status chat_go --no-pager || true
-            echo "--- Last 30 log lines ---"
-            journalctl -u chat_go -n 30 --no-pager || true
-            echo "✅ Deploy script done"
-
+            sleep 2
+            systemctl status chat_go --no-pager
