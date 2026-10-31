@@ -60,6 +60,9 @@ jobs:
             FLUSH PRIVILEGES;
             SQL
               echo "✅ MySQL ready"
+            else
+              echo "MySQL already installed, ensuring DB exists..."
+              mysql -u root -p'ChatG0_DB#2026' -e "CREATE DATABASE IF NOT EXISTS chat_go_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" || true
             fi
 
             # ── Write .env (strip leading spaces from each line) ──
