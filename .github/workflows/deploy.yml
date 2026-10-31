@@ -52,7 +52,6 @@ jobs:
               DEBIAN_FRONTEND=noninteractive apt-get install -y mysql-server
               systemctl enable mysql
               systemctl start mysql
-              # Create DB and user
               mysql -u root <<SQL
             ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'password123';
             CREATE DATABASE IF NOT EXISTS chat_go_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -61,40 +60,43 @@ jobs:
               echo "✅ MySQL ready"
             fi
 
-            # ── Write .env ────────────────────────────────────────
+            # ── Write .env (strip leading spaces from each line) ──
             mkdir -p /opt/chat_go
-            cat > /opt/chat_go/.env << 'ENVEOF'
-            ${{ secrets.ENV_FILE }}
-            ENVEOF
+            printf '%s\n' '${{ secrets.ENV_FILE }}' | sed 's/^[[:space:]]*//' > /opt/chat_go/.env
+            echo "--- .env content ---"
+            cat /opt/chat_go/.env
+            echo "--------------------"
 
             # ── Make binary executable ────────────────────────────
             chmod +x /opt/chat_go/server_bin
 
             # ── Create systemd service ────────────────────────────
-            cat > /etc/systemd/system/chat_go.service << 'EOF'
-            [Unit]
-            Description=Chat Go Server
-            After=network.target mysql.service
-            Requires=mysql.service
+            cat > /etc/systemd/system/chat_go.service <<EOF
+[Unit]
+Description=Chat Go Server
+After=network.target mysql.service
+Requires=mysql.service
 
-            [Service]
-            Type=simple
-            WorkingDirectory=/opt/chat_go
-            EnvironmentFile=/opt/chat_go/.env
-            ExecStart=/opt/chat_go/server_bin
-            Restart=always
-            RestartSec=5
+[Service]
+Type=simple
+WorkingDirectory=/opt/chat_go
+EnvironmentFile=/opt/chat_go/.env
+ExecStart=/opt/chat_go/server_bin
+Restart=always
+RestartSec=5
 
-            [Install]
-            WantedBy=multi-user.target
-            EOF
+[Install]
+WantedBy=multi-user.target
+EOF
 
             # ── Reload and restart service ────────────────────────
             systemctl daemon-reload
             systemctl enable chat_go
             systemctl restart chat_go
 
-            sleep 2
-            systemctl status chat_go --no-pager
-            echo "✅ Deployed! Running at http://${{ secrets.VPS_HOST }}:8088"
+            sleep 3
+            systemctl status chat_go --no-pager || true
+            echo "--- Last 30 log lines ---"
+            journalctl -u chat_go -n 30 --no-pager || true
+            echo "✅ Deploy script done"
 
