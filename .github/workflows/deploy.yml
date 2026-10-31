@@ -14,6 +14,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Check secrets are set
+        run: |
+          if [ -z "${{ secrets.VPS_HOST }}" ]; then
+            echo "❌ VPS_HOST secret is missing!"
+            exit 1
+          fi
+          echo "✅ Secrets look good"
+
       - name: Deploy to VPS via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -51,7 +59,9 @@ jobs:
             fi
 
             # Write .env from GitHub Secret
-            echo "${{ secrets.ENV_FILE }}" > $APP_DIR/backend/.env
+            cat > $APP_DIR/backend/.env << 'ENVEOF'
+            ${{ secrets.ENV_FILE }}
+            ENVEOF
 
             # Build and restart containers
             cd $APP_DIR
@@ -61,3 +71,4 @@ jobs:
 
             echo "✅ Deployed successfully!"
             docker compose ps
+
