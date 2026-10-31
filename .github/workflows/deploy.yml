@@ -14,15 +14,28 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Check secrets are set
-        run: |
-          if [ -z "${{ secrets.VPS_HOST }}" ]; then
-            echo "❌ VPS_HOST secret is missing!"
-            exit 1
-          fi
-          echo "✅ Secrets look good"
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
 
-      - name: Deploy to VPS via SSH
+      - name: Build binary
+        run: |
+          cd backend
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o server_bin ./cmd/server/main.go
+
+      - name: Copy binary to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          password: ${{ secrets.VPS_PASSWORD }}
+          port: ${{ secrets.VPS_PORT }}
+          source: "backend/server_bin"
+          target: "/opt/chat_go/"
+          strip_components: 1
+
+      - name: Deploy on VPS
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -32,44 +45,56 @@ jobs:
           script: |
             set -e
 
-            # Install Docker if not present
-            if ! command -v docker &>/dev/null; then
-              echo "Installing Docker..."
-              curl -fsSL https://get.docker.com | sh
-              systemctl enable docker
-              systemctl start docker
+            # ── Install MySQL if missing ──────────────────────────
+            if ! command -v mysql &>/dev/null; then
+              echo "Installing MySQL..."
+              apt-get update -qq
+              DEBIAN_FRONTEND=noninteractive apt-get install -y mysql-server
+              systemctl enable mysql
+              systemctl start mysql
+              # Create DB and user
+              mysql -u root <<SQL
+            ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'password123';
+            CREATE DATABASE IF NOT EXISTS chat_go_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+            FLUSH PRIVILEGES;
+            SQL
+              echo "✅ MySQL ready"
             fi
 
-            # Install Docker Compose plugin if not present
-            if ! docker compose version &>/dev/null; then
-              apt-get update -qq && apt-get install -y docker-compose-plugin
-            fi
-
-            APP_DIR="/opt/chat_go"
-
-            # Clone or pull latest code
-            if [ -d "$APP_DIR/.git" ]; then
-              echo "Pulling latest code..."
-              cd $APP_DIR
-              git pull origin main
-            else
-              echo "Removing old directory and cloning fresh..."
-              rm -rf $APP_DIR
-              git clone https://github.com/dara-tech/chat_go.git $APP_DIR
-              cd $APP_DIR
-            fi
-
-            # Write .env from GitHub Secret
-            cat > $APP_DIR/backend/.env << 'ENVEOF'
+            # ── Write .env ────────────────────────────────────────
+            mkdir -p /opt/chat_go
+            cat > /opt/chat_go/.env << 'ENVEOF'
             ${{ secrets.ENV_FILE }}
             ENVEOF
 
-            # Build and restart containers
-            cd $APP_DIR
-            docker compose down --remove-orphans || true
-            docker compose build --no-cache
-            docker compose up -d
+            # ── Make binary executable ────────────────────────────
+            chmod +x /opt/chat_go/server_bin
 
-            echo "✅ Deployed successfully!"
-            docker compose ps
+            # ── Create systemd service ────────────────────────────
+            cat > /etc/systemd/system/chat_go.service << 'EOF'
+            [Unit]
+            Description=Chat Go Server
+            After=network.target mysql.service
+            Requires=mysql.service
+
+            [Service]
+            Type=simple
+            WorkingDirectory=/opt/chat_go
+            EnvironmentFile=/opt/chat_go/.env
+            ExecStart=/opt/chat_go/server_bin
+            Restart=always
+            RestartSec=5
+
+            [Install]
+            WantedBy=multi-user.target
+            EOF
+
+            # ── Reload and restart service ────────────────────────
+            systemctl daemon-reload
+            systemctl enable chat_go
+            systemctl restart chat_go
+
+            sleep 2
+            systemctl status chat_go --no-pager
+            echo "✅ Deployed! Running at http://${{ secrets.VPS_HOST }}:8088"
 
