@@ -1,0 +1,33 @@
+# Environment & secrets
+.env
+.env.local
+.env.production
+
+# Go build artifacts
+backend/server
+backend/server_bin
+
+# Local media cache (use Cloudflare R2 in production)
+backend/media_cache/
+
+# Go test cache
+backend/vendor/
+
+# Frontend build
+frontend/build/
+frontend/.dart_tool/
+frontend/.flutter-plugins
+frontend/.flutter-plugins-dependencies
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

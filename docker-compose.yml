@@ -1,0 +1,43 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: chat_go_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - chat_net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: chat_go_app
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    environment:
+      DB_HOST: mysql
+    ports:
+      - "8088:8088"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - chat_net
+
+networks:
+  chat_net:
+    driver: bridge
+
+volumes:
+  mysql_data:
+
