@@ -34,12 +34,16 @@ class ChatListScreen extends StatefulWidget {
   /// Optional override to open Chat Folders settings (e.g. inside desktop right panel).
   final void Function({List<UserModel> users, List<ChatGroup> groups})? onOpenChatFolders;
 
+  /// Optional callback when users, groups, or conversations are updated.
+  final void Function({List<UserModel> users, List<ChatGroup> groups, Map<int, ChatConversation> convMap})? onDataUpdated;
+
   const ChatListScreen({
     super.key,
     required this.currentUser,
     this.onOpenChat,
     this.onOpenGroupChat,
     this.onOpenChatFolders,
+    this.onDataUpdated,
   });
 
   @override
@@ -241,6 +245,12 @@ class ChatListScreenState extends State<ChatListScreen> {
           _isLoading = false;
           _errorMessage = null;
         });
+
+        widget.onDataUpdated?.call(
+          users: _users,
+          groups: _groups,
+          convMap: {for (final c in _conversations) c.user.id: c},
+        );
 
         await LocalChatStorage.instance.saveConversations(conversations);
       }
@@ -592,75 +602,59 @@ class ChatListScreenState extends State<ChatListScreen> {
               color: LiquidGlassTheme.dividerHairline,
             ),
             Expanded(
-              child: Row(
-                children: [
-                  // Left Folder Rail (when "Tabs on the left" is active)
-                  if (isTabsLeft)
-                    ChatFolderLeftRail(
-                      users: _users,
-                      groups: _groups,
-                      convMap: convMap,
-                      onFolderSelected: (_) => setState(() {}),
-                      onOpenSettings: _handleOpenChatFolders,
-                    ),
-
-                  Expanded(
-                    child: _isLoading && _conversations.isEmpty && _users.isEmpty && _groups.isEmpty
-                        ? Center(
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2.5,
-                              valueColor: AlwaysStoppedAnimation<Color>(LiquidGlassTheme.accentBlue),
-                            ),
-                          )
-                        : _errorMessage != null && _conversations.isEmpty && _users.isEmpty && _groups.isEmpty
-                            ? _buildErrorView()
-                            : RefreshIndicator(
-                                onRefresh: () async {
-                                  ChatSocketService.instance.connect();
-                                  await _fetchData();
-                                },
-                                color: LiquidGlassTheme.accentBlue,
-                                child: items.isEmpty
-                                    ? _buildEmptyFilteredState()
-                                    : ListView.separated(
-                                        physics: const AlwaysScrollableScrollPhysics(
-                                          parent: BouncingScrollPhysics(),
-                                        ),
-                                        padding: const EdgeInsets.only(top: 4, bottom: 92),
-                                        itemCount: items.length,
-                                        separatorBuilder: (context, index) => Divider(
-                                          height: 1,
-                                          thickness: 0.8,
-                                          indent: 74,
-                                          endIndent: 0,
-                                          color: LiquidGlassTheme.dividerHairline,
-                                        ),
-                                        itemBuilder: (context, index) {
-                                          final item = items[index];
-                                          if (item.group != null) {
-                                            final g = item.group!;
-                                            return ChatListTile(
-                                              group: g,
-                                              currentUser: widget.currentUser,
-                                              onTap: () => _openGroupChat(g),
-                                              onLongPress: () => AddToFolderSheet.show(context, group: g),
-                                            );
-                                          }
-                                          final user = item.user!;
-                                          final conv = item.conv;
-                                          return ChatListTile(
-                                            user: user,
-                                            conv: conv,
-                                            currentUser: widget.currentUser,
-                                            onTap: () => _openChat(title: user.displayName, chatUser: user),
-                                            onLongPress: () => _showConversationOptions(user, conv),
-                                          );
-                                        },
-                                      ),
-                              ),
-                  ),
-                ],
-              ),
+              child: _isLoading && _conversations.isEmpty && _users.isEmpty && _groups.isEmpty
+                  ? Center(
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        valueColor: AlwaysStoppedAnimation<Color>(LiquidGlassTheme.accentBlue),
+                      ),
+                    )
+                  : _errorMessage != null && _conversations.isEmpty && _users.isEmpty && _groups.isEmpty
+                      ? _buildErrorView()
+                      : RefreshIndicator(
+                          onRefresh: () async {
+                            ChatSocketService.instance.connect();
+                            await _fetchData();
+                          },
+                          color: LiquidGlassTheme.accentBlue,
+                          child: items.isEmpty
+                              ? _buildEmptyFilteredState()
+                              : ListView.separated(
+                                  physics: const AlwaysScrollableScrollPhysics(
+                                    parent: BouncingScrollPhysics(),
+                                  ),
+                                  padding: const EdgeInsets.only(top: 4, bottom: 92),
+                                  itemCount: items.length,
+                                  separatorBuilder: (context, index) => Divider(
+                                    height: 1,
+                                    thickness: 0.8,
+                                    indent: 74,
+                                    endIndent: 0,
+                                    color: LiquidGlassTheme.dividerHairline,
+                                  ),
+                                  itemBuilder: (context, index) {
+                                    final item = items[index];
+                                    if (item.group != null) {
+                                      final g = item.group!;
+                                      return ChatListTile(
+                                        group: g,
+                                        currentUser: widget.currentUser,
+                                        onTap: () => _openGroupChat(g),
+                                        onLongPress: () => AddToFolderSheet.show(context, group: g),
+                                      );
+                                    }
+                                    final user = item.user!;
+                                    final conv = item.conv;
+                                    return ChatListTile(
+                                      user: user,
+                                      conv: conv,
+                                      currentUser: widget.currentUser,
+                                      onTap: () => _openChat(title: user.displayName, chatUser: user),
+                                      onLongPress: () => _showConversationOptions(user, conv),
+                                    );
+                                  },
+                                ),
+                        ),
             ),
           ],
         );
