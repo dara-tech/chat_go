@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/api/api_client.dart';
 import 'core/notifications/in_app_notification_banner_overlay.dart';
 import 'core/notifications/notification_alert_service.dart';
+import 'core/services/chat_folder_controller.dart';
 import 'core/theme/theme_controller.dart';
 import 'models/user_model.dart';
 import 'screens/auth_screen.dart';
@@ -12,6 +13,7 @@ import 'screens/home_dashboard_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await ThemeController.instance.init();
+  await ChatFolderController.instance.init();
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,

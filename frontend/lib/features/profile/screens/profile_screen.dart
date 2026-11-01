@@ -10,6 +10,7 @@ import 'package:frontend/core/theme/theme_controller.dart';
 import 'package:frontend/models/user_model.dart';
 import 'package:frontend/features/auth/screens/auth_screen.dart';
 import 'package:frontend/features/profile/screens/edit_profile_screen.dart';
+import 'package:frontend/features/settings/screens/chat_folders_settings_screen.dart';
 import 'package:frontend/features/settings/screens/privacy_settings_screen.dart';
 import 'package:frontend/features/settings/screens/theme_settings_screen.dart';
 
@@ -205,10 +206,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   children: [
                     // Hero Avatar & User Info
                     _buildHeroProfile(context),
-                    const SizedBox(height: 20),
-
-                    // Quick Stats Card
-                    _buildQuickStats(),
                     const SizedBox(height: 24),
 
                     // Section: Appearance & Theme
@@ -458,58 +455,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildQuickStats() {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
-      decoration: BoxDecoration(
-        color: LiquidGlassTheme.bgCard,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: LiquidGlassTheme.borderSubtle),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildStatItem('Engine', 'WebSocket', CupertinoIcons.bolt_fill, const Color(0xFF8B5CF6)),
-          Container(height: 28, width: 1, color: LiquidGlassTheme.dividerHairline),
-          _buildStatItem('Storage', 'Cloudflare R2', CupertinoIcons.cloud_fill, const Color(0xFFF97316)),
-          Container(height: 28, width: 1, color: LiquidGlassTheme.dividerHairline),
-          _buildStatItem('Security', 'JWT & Bcrypt', CupertinoIcons.lock_shield_fill, const Color(0xFF10B981)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatItem(String label, String value, IconData icon, Color color) {
-    return Column(
-      children: [
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 13, color: color),
-            const SizedBox(width: 4),
-            Text(
-              value,
-              style: GoogleFonts.inter(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: LiquidGlassTheme.textPrimary,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          style: GoogleFonts.inter(
-            fontSize: 11,
-            fontWeight: FontWeight.w500,
-            color: LiquidGlassTheme.textSecondary,
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildSectionHeader(String title) {
     return Align(
       alignment: Alignment.centerLeft,
@@ -551,6 +496,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (_) => const ThemeSettingsScreen(),
+                ),
+              );
+            },
+          ),
+          Divider(height: 1, thickness: 0.8, indent: 56, color: LiquidGlassTheme.dividerHairline),
+          _buildGroupRow(
+            icon: CupertinoIcons.folder_fill,
+            iconBg: const Color(0xFF0284C7),
+            title: 'Chat Folders',
+            subtitle: 'Organize chats into custom folders & tabs',
+            showChevron: true,
+            onTap: () {
+              Navigator.of(context).push(
+                CupertinoPageRoute(
+                  builder: (_) => const ChatFoldersSettingsScreen(),
                 ),
               );
             },

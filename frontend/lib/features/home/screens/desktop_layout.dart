@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -12,10 +11,11 @@ import '../../chat/screens/chat_screen.dart';
 import '../../contacts/screens/contacts_screen.dart';
 import '../../media/screens/media_viewer_screen.dart';
 import '../../profile/screens/profile_screen.dart';
+import '../../settings/screens/chat_folders_settings_screen.dart';
 import '../../../core/notifications/notification_alert_service.dart';
 import '../../../core/services/media_download_service.dart';
 import '../../../core/websocket/chat_socket_service.dart';
-import 'desktop_nav_rail.dart';
+import '../widgets/desktop_nav_rail.dart';
 
 /// Desktop layout breakpoint — screens wider than this use [DesktopLayout].
 const double kDesktopBreakpoint = 720;
@@ -44,6 +44,10 @@ class _DesktopLayoutState extends State<DesktopLayout>
   /// The active chat (right panel). Null = show the "select a conversation"
   /// placeholder.
   ChatScreen? _activeChatScreen;
+
+  /// Detail or settings screen shown in the right panel (e.g. Chat Folders)
+  /// keeping the navigation rail and the chat list intact on the left.
+  Widget? _activeDetailScreen;
 
   final GlobalKey<ChatListScreenState> _chatListKey =
       GlobalKey<ChatListScreenState>();
@@ -97,6 +101,7 @@ class _DesktopLayoutState extends State<DesktopLayout>
   // ── Helpers ──────────────────────────────────────────────────────────────
   void _openChatWithUser(UserModel user) {
     setState(() {
+      _activeDetailScreen = null;
       _activeChatScreen = ChatScreen(
         key: ValueKey('chat_user_${user.id}'),
         currentUser: _currentUser,
@@ -110,6 +115,7 @@ class _DesktopLayoutState extends State<DesktopLayout>
 
   void _openChatWithGroup(ChatGroup group) {
     setState(() {
+      _activeDetailScreen = null;
       _activeChatScreen = ChatScreen(
         key: ValueKey('chat_group_${group.id}'),
         currentUser: _currentUser,
@@ -120,8 +126,19 @@ class _DesktopLayoutState extends State<DesktopLayout>
     });
   }
 
-  void _clearChat() {
-    setState(() => _activeChatScreen = null);
+  void _openChatFoldersSettings({
+    List<UserModel> users = const [],
+    List<ChatGroup> groups = const [],
+  }) {
+    setState(() {
+      _activeDetailScreen = ChatFoldersSettingsScreen(
+        availableUsers: users,
+        availableGroups: groups,
+        onClose: () {
+          setState(() => _activeDetailScreen = null);
+        },
+      );
+    });
   }
 
   // ── Build ─────────────────────────────────────────────────────────────────
@@ -148,12 +165,23 @@ class _DesktopLayoutState extends State<DesktopLayout>
 
   // ── Nav rail ──────────────────────────────────────────────────────────────
   Widget _buildNavRail() {
+    final effectiveIndex = _activeDetailScreen != null
+        ? 2
+        : (_selectedTab >= 2 ? _selectedTab + 1 : _selectedTab);
+
     return DesktopNavRail(
-      currentIndex: _selectedTab,
+      currentIndex: effectiveIndex,
       onTabSelected: (i) => setState(() {
-        _selectedTab = i;
-        // When switching away from Chats, collapse right panel
-        if (i != 0) _activeChatScreen = null;
+        if (i == 2) {
+          // Open Chat Folders in right panel, keep chat list on the left
+          _selectedTab = 0;
+          _openChatFoldersSettings();
+        } else {
+          final tabIndex = i > 2 ? i - 1 : i;
+          _selectedTab = tabIndex;
+          _activeDetailScreen = null;
+          if (tabIndex != 0) _activeChatScreen = null;
+        }
       }),
       items: const [
         DesktopNavRailItem(
@@ -165,6 +193,11 @@ class _DesktopLayoutState extends State<DesktopLayout>
           icon: CupertinoIcons.person_2,
           activeIcon: CupertinoIcons.person_2_fill,
           label: 'People',
+        ),
+        DesktopNavRailItem(
+          icon: CupertinoIcons.folder,
+          activeIcon: CupertinoIcons.folder_fill,
+          label: 'Folders',
         ),
         DesktopNavRailItem(
           icon: CupertinoIcons.person_crop_circle,
@@ -181,7 +214,7 @@ class _DesktopLayoutState extends State<DesktopLayout>
     return Tooltip(
       message: theme.isDark ? 'Switch to Light' : 'Switch to Dark',
       child: GestureDetector(
-        onTap: () => theme.toggleDark(),
+        onTap: () => theme.toggleDarkMode(),
         behavior: HitTestBehavior.opaque,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
@@ -216,6 +249,7 @@ class _DesktopLayoutState extends State<DesktopLayout>
           currentUser: _currentUser,
           onOpenChat: _openChatWithUser,
           onOpenGroupChat: _openChatWithGroup,
+          onOpenChatFolders: _openChatFoldersSettings,
         );
       case 1:
         return ContactsScreen(
@@ -229,8 +263,11 @@ class _DesktopLayoutState extends State<DesktopLayout>
     }
   }
 
-  // ── Right panel: active chat or placeholder ───────────────────────────────
+  // ── Right panel: active chat, detail screen, or placeholder ───────────────
   Widget _buildRightPanel() {
+    if (_activeDetailScreen != null) {
+      return _activeDetailScreen!;
+    }
     if (_activeChatScreen != null) {
       return _activeChatScreen!;
     }

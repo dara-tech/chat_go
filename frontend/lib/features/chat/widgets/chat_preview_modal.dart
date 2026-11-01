@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'add_to_folder_sheet.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/storage/local_chat_storage.dart';
 import '../../../core/theme/liquid_glass_theme.dart';
@@ -544,6 +545,7 @@ class _ChatPreviewModalState extends State<ChatPreviewModal> {
                 textColor: textColor,
                 onTap: () {
                   Navigator.of(context).pop();
+                  AddToFolderSheet.show(context, user: widget.partnerUser);
                 },
               ),
               Divider(height: 1, thickness: 0.5, color: theme.divider),

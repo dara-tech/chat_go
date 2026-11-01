@@ -3,7 +3,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../../../core/theme/liquid_glass_theme.dart';
 import '../../../core/theme/theme_controller.dart';
 
 /// A single item definition for [DesktopNavRail].
@@ -121,13 +120,6 @@ class DesktopNavRail extends StatelessWidget {
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: primaryColor.withOpacity(0.35),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
       child: const Icon(
         CupertinoIcons.chat_bubble_2_fill,
@@ -231,18 +223,6 @@ class _NavRailItem extends StatelessWidget {
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                ),
-
-                // Active indicator dot
-                const SizedBox(height: 3),
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  width: isSelected ? 4 : 0,
-                  height: isSelected ? 4 : 0,
-                  decoration: BoxDecoration(
-                    color: primaryColor,
-                    shape: BoxShape.circle,
-                  ),
                 ),
               ],
             ),

@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/api/api_client.dart';
+import '../../../core/services/chat_folder_controller.dart';
 import '../../../core/theme/liquid_glass_theme.dart';
+import '../../../core/theme/theme_controller.dart';
 import '../../../models/chat_message.dart';
 import '../../../models/group_model.dart';
 import '../../../models/user_model.dart';
@@ -112,15 +114,43 @@ class ChatListTile extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Expanded(
-                            child: Text(
-                              g.name,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.outfit(
-                                fontSize: 15,
-                                fontWeight: hasUnread ? FontWeight.w700 : FontWeight.w600,
-                                color: LiquidGlassTheme.textPrimary,
-                              ),
+                            child: Row(
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    g.name,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: GoogleFonts.outfit(
+                                      fontSize: 15,
+                                      fontWeight: hasUnread ? FontWeight.w700 : FontWeight.w600,
+                                      color: LiquidGlassTheme.textPrimary,
+                                    ),
+                                  ),
+                                ),
+                                if (ChatFolderController.instance.showFolderTags) ...[
+                                  for (final f in ChatFolderController.instance
+                                      .getFoldersForChat(group: g)
+                                      .take(2)) ...[
+                                    const SizedBox(width: 5),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                      decoration: BoxDecoration(
+                                        color: ThemeController.instance.primaryColor.withOpacity(0.12),
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: Text(
+                                        f.name,
+                                        style: GoogleFonts.inter(
+                                          fontSize: 9.5,
+                                          fontWeight: FontWeight.w600,
+                                          color: ThemeController.instance.primaryColor,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ],
                             ),
                           ),
                           Row(
@@ -300,15 +330,43 @@ class ChatListTile extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Expanded(
-                          child: Text(
-                            u.displayName.isNotEmpty ? u.displayName : u.username,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.outfit(
-                              fontSize: 15,
-                              fontWeight: hasUnread ? FontWeight.w700 : FontWeight.w600,
-                              color: LiquidGlassTheme.textPrimary,
-                            ),
+                          child: Row(
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  u.displayName.isNotEmpty ? u.displayName : u.username,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: GoogleFonts.outfit(
+                                    fontSize: 15,
+                                    fontWeight: hasUnread ? FontWeight.w700 : FontWeight.w600,
+                                    color: LiquidGlassTheme.textPrimary,
+                                  ),
+                                ),
+                              ),
+                              if (ChatFolderController.instance.showFolderTags) ...[
+                                for (final f in ChatFolderController.instance
+                                    .getFoldersForChat(user: u, conv: conv)
+                                    .take(2)) ...[
+                                  const SizedBox(width: 5),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                    decoration: BoxDecoration(
+                                      color: ThemeController.instance.primaryColor.withOpacity(0.12),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Text(
+                                      f.name,
+                                      style: GoogleFonts.inter(
+                                        fontSize: 9.5,
+                                        fontWeight: FontWeight.w600,
+                                        color: ThemeController.instance.primaryColor,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ],
                           ),
                         ),
                         Row(

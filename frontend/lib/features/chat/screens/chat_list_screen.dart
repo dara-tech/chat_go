@@ -4,12 +4,16 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/api/api_client.dart';
+import '../../../core/services/chat_folder_controller.dart';
 import '../../../core/storage/local_chat_storage.dart';
 import '../../../core/theme/liquid_glass_theme.dart';
 import '../../../core/websocket/chat_socket_service.dart';
 import '../../../models/chat_message.dart';
 import '../../../models/group_model.dart';
 import '../../../models/user_model.dart';
+import '../../settings/screens/chat_folders_settings_screen.dart';
+import '../widgets/add_to_folder_sheet.dart';
+import '../widgets/chat_folder_tabs.dart';
 import '../widgets/chat_list_tile.dart';
 import '../widgets/chat_preview_modal.dart';
 import '../widgets/create_group_sheet.dart';
@@ -27,11 +31,15 @@ class ChatListScreen extends StatefulWidget {
   /// Optional override called instead of pushing a new route for group chats.
   final void Function(ChatGroup group)? onOpenGroupChat;
 
+  /// Optional override to open Chat Folders settings (e.g. inside desktop right panel).
+  final void Function({List<UserModel> users, List<ChatGroup> groups})? onOpenChatFolders;
+
   const ChatListScreen({
     super.key,
     required this.currentUser,
     this.onOpenChat,
     this.onOpenGroupChat,
+    this.onOpenChatFolders,
   });
 
   @override
@@ -372,6 +380,21 @@ class ChatListScreenState extends State<ChatListScreen> {
     }
   }
 
+  void _handleOpenChatFolders() {
+    if (widget.onOpenChatFolders != null) {
+      widget.onOpenChatFolders!(users: _users, groups: _groups);
+    } else {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => ChatFoldersSettingsScreen(
+            availableUsers: _users,
+            availableGroups: _groups,
+          ),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final convMap = <int, ChatConversation>{};
@@ -392,42 +415,78 @@ class ChatListScreenState extends State<ChatListScreen> {
     }
 
     final items = <_ChatItem>[];
+    final activeFolder = ChatFolderController.instance.activeFolder;
+    final isFilteringByFolder = activeFolder != null && activeFolder.id != 'all_chats';
 
-    if (_activeFilter != 'Groups') {
+    if (isFilteringByFolder) {
       final filteredUsers = allAvailableUsers.values.where((u) {
         if (_searchQuery.isNotEmpty) {
           final matches = u.displayName.toLowerCase().contains(_searchQuery) ||
               u.username.toLowerCase().contains(_searchQuery);
           if (!matches) return false;
         }
-        if (_activeFilter == 'Online') {
-          return u.isOnline == true;
-        }
-        if (_activeFilter == 'Unread') {
-          final conv = convMap[u.id];
-          return conv != null && conv.unreadCount > 0;
-        }
-        return true;
+        return ChatFolderController.instance.matchesFolder(
+          activeFolder,
+          user: u,
+          conv: convMap[u.id],
+        );
       });
 
       for (final u in filteredUsers) {
         items.add(_ChatItem.user(user: u, conv: convMap[u.id]));
       }
-    }
 
-    if (_activeFilter == 'All' || _activeFilter == 'Groups' || _activeFilter == 'Unread') {
       final filteredGroups = _groups.where((g) {
-        if (_activeFilter == 'Unread' && g.unreadCount <= 0) {
-          return false;
-        }
         if (_searchQuery.isNotEmpty) {
-          return g.name.toLowerCase().contains(_searchQuery);
+          final matches = g.name.toLowerCase().contains(_searchQuery);
+          if (!matches) return false;
         }
-        return true;
+        return ChatFolderController.instance.matchesFolder(
+          activeFolder,
+          group: g,
+        );
       });
 
       for (final g in filteredGroups) {
         items.add(_ChatItem.group(g));
+      }
+    } else {
+      if (_activeFilter != 'Groups') {
+        final filteredUsers = allAvailableUsers.values.where((u) {
+          if (_searchQuery.isNotEmpty) {
+            final matches = u.displayName.toLowerCase().contains(_searchQuery) ||
+                u.username.toLowerCase().contains(_searchQuery);
+            if (!matches) return false;
+          }
+          if (_activeFilter == 'Online') {
+            return u.isOnline == true;
+          }
+          if (_activeFilter == 'Unread') {
+            final conv = convMap[u.id];
+            return conv != null && conv.unreadCount > 0;
+          }
+          return true;
+        });
+
+        for (final u in filteredUsers) {
+          items.add(_ChatItem.user(user: u, conv: convMap[u.id]));
+        }
+      }
+
+      if (_activeFilter == 'All' || _activeFilter == 'Groups' || _activeFilter == 'Unread') {
+        final filteredGroups = _groups.where((g) {
+          if (_activeFilter == 'Unread' && g.unreadCount <= 0) {
+            return false;
+          }
+          if (_searchQuery.isNotEmpty) {
+            return g.name.toLowerCase().contains(_searchQuery);
+          }
+          return true;
+        });
+
+        for (final g in filteredGroups) {
+          items.add(_ChatItem.group(g));
+        }
       }
     }
 
@@ -458,120 +517,158 @@ class ChatListScreenState extends State<ChatListScreen> {
     });
 
     final onlineCount = _users.where((u) => u.isOnline == true).length;
+    final folderCtrl = ChatFolderController.instance;
 
-    return Column(
-      children: [
-        ValueListenableBuilder<SocketConnectionState>(
-          valueListenable: ChatSocketService.instance.connectionStateNotifier,
-          builder: (context, connState, _) {
-            if (connState == SocketConnectionState.connected) {
-              return const SizedBox.shrink();
-            }
+    return ListenableBuilder(
+      listenable: folderCtrl,
+      builder: (context, _) {
+        final isTabsLeft = folderCtrl.isTabsOnLeft;
 
-            final isReconnecting = connState == SocketConnectionState.reconnecting ||
-                connState == SocketConnectionState.connecting;
-            final text = isReconnecting ? 'Connecting...' : 'Waiting for connection...';
+        return Column(
+          children: [
+            ValueListenableBuilder<SocketConnectionState>(
+              valueListenable: ChatSocketService.instance.connectionStateNotifier,
+              builder: (context, connState, _) {
+                if (connState == SocketConnectionState.connected) {
+                  return const SizedBox.shrink();
+                }
 
-            return Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 16),
-              decoration: BoxDecoration(
-                color: const Color(0xFF0F172A).withOpacity(0.92),
-                border: Border(
-                  bottom: BorderSide(
-                    color: Colors.white.withOpacity(0.06),
-                    width: 0.5,
-                  ),
-                ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const SizedBox(
-                    width: 12,
-                    height: 12,
-                    child: CupertinoActivityIndicator(radius: 6, color: Colors.white70),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    text,
-                    style: GoogleFonts.inter(
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white70,
-                      letterSpacing: 0.1,
+                final isReconnecting = connState == SocketConnectionState.reconnecting ||
+                    connState == SocketConnectionState.connecting;
+                final text = isReconnecting ? 'Connecting...' : 'Waiting for connection...';
+
+                return Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0F172A).withOpacity(0.92),
+                    border: Border(
+                      bottom: BorderSide(
+                        color: Colors.white.withOpacity(0.06),
+                        width: 0.5,
+                      ),
                     ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const SizedBox(
+                        width: 12,
+                        height: 12,
+                        child: CupertinoActivityIndicator(radius: 6, color: Colors.white70),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        text,
+                        style: GoogleFonts.inter(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.white70,
+                          letterSpacing: 0.1,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+            _buildHeader(onlineCount),
+
+            // Top Folder Tabs (when "Tabs at the top" is active)
+            if (!isTabsLeft)
+              ChatFolderTopBar(
+                users: _users,
+                groups: _groups,
+                convMap: convMap,
+                onFolderSelected: (_) => setState(() {}),
+                onOpenSettings: _handleOpenChatFolders,
+              ),
+
+            // Sub-filter chips only if inside All Chats
+            if (folderCtrl.activeFolderId == 'all_chats')
+              _buildFilterChips(onlineCount),
+
+            Divider(
+              height: 1,
+              thickness: 0.8,
+              indent: 0,
+              endIndent: 0,
+              color: LiquidGlassTheme.dividerHairline,
+            ),
+            Expanded(
+              child: Row(
+                children: [
+                  // Left Folder Rail (when "Tabs on the left" is active)
+                  if (isTabsLeft)
+                    ChatFolderLeftRail(
+                      users: _users,
+                      groups: _groups,
+                      convMap: convMap,
+                      onFolderSelected: (_) => setState(() {}),
+                      onOpenSettings: _handleOpenChatFolders,
+                    ),
+
+                  Expanded(
+                    child: _isLoading && _conversations.isEmpty && _users.isEmpty && _groups.isEmpty
+                        ? Center(
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              valueColor: AlwaysStoppedAnimation<Color>(LiquidGlassTheme.accentBlue),
+                            ),
+                          )
+                        : _errorMessage != null && _conversations.isEmpty && _users.isEmpty && _groups.isEmpty
+                            ? _buildErrorView()
+                            : RefreshIndicator(
+                                onRefresh: () async {
+                                  ChatSocketService.instance.connect();
+                                  await _fetchData();
+                                },
+                                color: LiquidGlassTheme.accentBlue,
+                                child: items.isEmpty
+                                    ? _buildEmptyFilteredState()
+                                    : ListView.separated(
+                                        physics: const AlwaysScrollableScrollPhysics(
+                                          parent: BouncingScrollPhysics(),
+                                        ),
+                                        padding: const EdgeInsets.only(top: 4, bottom: 92),
+                                        itemCount: items.length,
+                                        separatorBuilder: (context, index) => Divider(
+                                          height: 1,
+                                          thickness: 0.8,
+                                          indent: 74,
+                                          endIndent: 0,
+                                          color: LiquidGlassTheme.dividerHairline,
+                                        ),
+                                        itemBuilder: (context, index) {
+                                          final item = items[index];
+                                          if (item.group != null) {
+                                            final g = item.group!;
+                                            return ChatListTile(
+                                              group: g,
+                                              currentUser: widget.currentUser,
+                                              onTap: () => _openGroupChat(g),
+                                              onLongPress: () => AddToFolderSheet.show(context, group: g),
+                                            );
+                                          }
+                                          final user = item.user!;
+                                          final conv = item.conv;
+                                          return ChatListTile(
+                                            user: user,
+                                            conv: conv,
+                                            currentUser: widget.currentUser,
+                                            onTap: () => _openChat(title: user.displayName, chatUser: user),
+                                            onLongPress: () => _showConversationOptions(user, conv),
+                                          );
+                                        },
+                                      ),
+                              ),
                   ),
                 ],
               ),
-            );
-          },
-        ),
-        _buildHeader(onlineCount),
-        _buildFilterChips(onlineCount),
-        Divider(
-          height: 1,
-          thickness: 0.8,
-          indent: 0,
-          endIndent: 0,
-          color: LiquidGlassTheme.dividerHairline,
-        ),
-        Expanded(
-          child: _isLoading && _conversations.isEmpty && _users.isEmpty && _groups.isEmpty
-              ? Center(
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2.5,
-                    valueColor: AlwaysStoppedAnimation<Color>(LiquidGlassTheme.accentBlue),
-                  ),
-                )
-              : _errorMessage != null && _conversations.isEmpty && _users.isEmpty && _groups.isEmpty
-                  ? _buildErrorView()
-                  : RefreshIndicator(
-                      onRefresh: () async {
-                        ChatSocketService.instance.connect();
-                        await _fetchData();
-                      },
-                      color: LiquidGlassTheme.accentBlue,
-                      child: items.isEmpty
-                          ? _buildEmptyFilteredState()
-                          : ListView.separated(
-                              physics: const AlwaysScrollableScrollPhysics(
-                                parent: BouncingScrollPhysics(),
-                              ),
-                              padding: const EdgeInsets.only(top: 4, bottom: 92),
-                              itemCount: items.length,
-                              separatorBuilder: (context, index) => Divider(
-                                height: 1,
-                                thickness: 0.8,
-                                indent: 74,
-                                endIndent: 0,
-                                color: LiquidGlassTheme.dividerHairline,
-                              ),
-                              itemBuilder: (context, index) {
-                                final item = items[index];
-                                if (item.group != null) {
-                                  final g = item.group!;
-                                  return ChatListTile(
-                                    group: g,
-                                    currentUser: widget.currentUser,
-                                    onTap: () => _openGroupChat(g),
-                                    onLongPress: () => _openGroupChat(g),
-                                  );
-                                }
-                                final user = item.user!;
-                                final conv = item.conv;
-                                return ChatListTile(
-                                  user: user,
-                                  conv: conv,
-                                  currentUser: widget.currentUser,
-                                  onTap: () => _openChat(title: user.displayName, chatUser: user),
-                                  onLongPress: () => _showConversationOptions(user, conv),
-                                );
-                              },
-                            ),
-                    ),
-        ),
-      ],
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -613,6 +710,23 @@ class ChatListScreenState extends State<ChatListScreen> {
           ),
           Row(
             children: [
+              GestureDetector(
+                onTap: _handleOpenChatFolders,
+                behavior: HitTestBehavior.opaque,
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: LiquidGlassTheme.inputFill,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    CupertinoIcons.folder_fill,
+                    size: 17,
+                    color: LiquidGlassTheme.accentBlue,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
               GestureDetector(
                 onTap: _openCreateGroupSheet,
                 behavior: HitTestBehavior.opaque,
