@@ -147,16 +147,44 @@ class _DesktopLayoutState extends State<DesktopLayout>
     return ListenableBuilder(
       listenable: ThemeController.instance,
       builder: (context, _) {
+        final isDark = ThemeController.instance.isDark;
+        final isDesktop = MediaQuery.of(context).size.width >= kDesktopBreakpoint;
+
         return Scaffold(
-          backgroundColor: ThemeController.instance.scaffoldBg,
+          backgroundColor: isDesktop
+              ? (isDark ? const Color(0xFF090D16) : const Color(0xFFE2E8F0))
+              : ThemeController.instance.scaffoldBg,
           body: SafeArea(
             bottom: false,
-            child: _DesktopShell(
-              navRail: _buildNavRail(),
-              leftPanel: _buildLeftPanel(),
-              rightPanel: _buildRightPanel(),
-              activeChatScreen: _activeChatScreen,
-            ),
+            child: isDesktop
+                ? Padding(
+                    padding: const EdgeInsets.all(10.0),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: ThemeController.instance.scaffoldBg,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: isDark
+                              ? Colors.white.withOpacity(0.08)
+                              : Colors.black.withOpacity(0.08),
+                          width: 1,
+                        ),
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: _DesktopShell(
+                        navRail: _buildNavRail(),
+                        leftPanel: _buildLeftPanel(),
+                        rightPanel: _buildRightPanel(),
+                        activeChatScreen: _activeChatScreen,
+                      ),
+                    ),
+                  )
+                : _DesktopShell(
+                    navRail: _buildNavRail(),
+                    leftPanel: _buildLeftPanel(),
+                    rightPanel: _buildRightPanel(),
+                    activeChatScreen: _activeChatScreen,
+                  ),
           ),
         );
       },

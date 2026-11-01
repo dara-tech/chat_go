@@ -70,7 +70,8 @@ class DesktopNavRail extends StatelessWidget {
               child: SafeArea(
                 child: Column(
                   children: [
-                    const SizedBox(height: 12),
+                    // macOS traffic lights (🔴 🟡 🟢)
+                    _buildTrafficLights(),
 
                     // Nav items
                     ...List.generate(items.length, (i) {
@@ -100,6 +101,37 @@ class DesktopNavRail extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildTrafficLights() {
+    return Padding(
+      padding: const EdgeInsets.only(top: 14, bottom: 18),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          _trafficDot(const Color(0xFFFF5F56)), // Close (red)
+          const SizedBox(width: 7),
+          _trafficDot(const Color(0xFFFFBD2E)), // Minimize (yellow)
+          const SizedBox(width: 7),
+          _trafficDot(const Color(0xFF27C93F)), // Zoom (green)
+        ],
+      ),
+    );
+  }
+
+  Widget _trafficDot(Color color) {
+    return Container(
+      width: 12,
+      height: 12,
+      decoration: BoxDecoration(
+        color: color,
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: Colors.black.withOpacity(0.12),
+          width: 0.5,
+        ),
+      ),
     );
   }
 }
