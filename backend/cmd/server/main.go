@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"os"
 	"chat_go/backend/config"
 	"chat_go/backend/database"
 	"chat_go/backend/handlers"
@@ -16,7 +17,13 @@ func main() {
 	// 1. Load application configuration
 	cfg := config.LoadConfig()
 
-	// 2. Connect to MySQL database
+	// 2. Set up log broker — tees Go's default logger into SSE stream
+	logBroker := handlers.NewLogBroker()
+	handlers.GlobalLogBroker = logBroker
+	log.SetOutput(handlers.NewLogWriter(os.Stderr, logBroker))
+	log.SetFlags(log.Ldate | log.Ltime)
+
+	// 3. Connect to MySQL database
 	db, err := database.ConnectDatabase(cfg)
 	if err != nil {
 		log.Fatalf("Fatal: Database initialization failed: %v", err)
@@ -49,15 +56,19 @@ func main() {
 	chatHandler := handlers.NewChatHandler(chatService, wsHub)
 	mediaHandler := handlers.NewMediaHandler(r2Service, authService)
 	groupHandler := handlers.NewGroupHandler(groupService, wsHub)
+	logHandler := handlers.NewLogHandler(logBroker, cfg.LogSecret)
 	corsMiddleware := middleware.SetupCORS(cfg)
 
 	// 7. Setup Gin router
-	router := routes.SetupRouter(authHandler, chatHandler, mediaHandler, groupHandler, jwtService, corsMiddleware)
+	router := routes.SetupRouter(authHandler, chatHandler, mediaHandler, groupHandler, logHandler, jwtService, corsMiddleware)
 
-	// 7. Start server
+	// 8. Start server
 	addr := ":" + cfg.Port
 	log.Printf("Chat Auth Server running at http://localhost%s", addr)
 	log.Printf("WebSocket endpoint available at ws://localhost%s/api/v1/ws?token=<ACCESS_TOKEN>", addr)
+	if cfg.LogSecret != "" {
+		log.Printf("Log dashboard: http://localhost%s/admin/logs?secret=<LOG_SECRET>", addr)
+	}
 
 	if err := router.Run(addr); err != nil {
 		log.Fatalf("Server terminated: %v", err)

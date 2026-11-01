@@ -25,13 +25,6 @@ class ChatFolderHeroGraphic extends StatelessWidget {
               decoration: BoxDecoration(
                 color: const Color(0xFFFBBF24),
                 borderRadius: BorderRadius.circular(6),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.12),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
               ),
             ),
           ),
@@ -46,13 +39,6 @@ class ChatFolderHeroGraphic extends StatelessWidget {
               decoration: BoxDecoration(
                 color: const Color(0xFF38BDF8),
                 borderRadius: BorderRadius.circular(5),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.15),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
               ),
             ),
           ),
@@ -67,13 +53,6 @@ class ChatFolderHeroGraphic extends StatelessWidget {
               decoration: BoxDecoration(
                 color: const Color(0xFFEF4444),
                 borderRadius: BorderRadius.circular(5),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.18),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
               ),
             ),
           ),
@@ -95,13 +74,6 @@ class ChatFolderHeroGraphic extends StatelessWidget {
                   end: Alignment.bottomRight,
                 ),
                 borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.28),
-                    blurRadius: 18,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
               ),
               child: Stack(
                 children: [

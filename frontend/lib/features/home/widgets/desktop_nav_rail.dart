@@ -1,5 +1,4 @@
 import 'dart:ui';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -71,12 +70,7 @@ class DesktopNavRail extends StatelessWidget {
               child: SafeArea(
                 child: Column(
                   children: [
-                    const SizedBox(height: 16),
-
-                    // App logo / brand mark
-                    _buildLogo(primaryColor),
-
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 12),
 
                     // Nav items
                     ...List.generate(items.length, (i) {
@@ -106,26 +100,6 @@ class DesktopNavRail extends StatelessWidget {
           ),
         );
       },
-    );
-  }
-
-  Widget _buildLogo(Color primaryColor) {
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [primaryColor, primaryColor.withOpacity(0.7)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: const Icon(
-        CupertinoIcons.chat_bubble_2_fill,
-        color: Colors.white,
-        size: 20,
-      ),
     );
   }
 }

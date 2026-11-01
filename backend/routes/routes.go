@@ -11,7 +11,7 @@ import (
 )
 
 // SetupRouter sets up Gin router with all HTTP endpoints and WebSocket
-func SetupRouter(authHandler *handlers.AuthHandler, chatHandler *handlers.ChatHandler, mediaHandler *handlers.MediaHandler, groupHandler *handlers.GroupHandler, jwtService services.JWTService, corsMiddleware gin.HandlerFunc) *gin.Engine {
+func SetupRouter(authHandler *handlers.AuthHandler, chatHandler *handlers.ChatHandler, mediaHandler *handlers.MediaHandler, groupHandler *handlers.GroupHandler, logHandler *handlers.LogHandler, jwtService services.JWTService, corsMiddleware gin.HandlerFunc) *gin.Engine {
 	r := gin.Default()
 
 	// Apply CORS
@@ -24,6 +24,10 @@ func SetupRouter(authHandler *handlers.AuthHandler, chatHandler *handlers.ChatHa
 			"service": "chat-go-auth",
 		})
 	})
+
+	// ── Admin: log dashboard (secret-protected, no JWT required) ──────────
+	r.GET("/admin/logs", logHandler.ServeUI)
+	r.GET("/logs/stream", logHandler.StreamSSE)
 
 	api := r.Group("/api/v1")
 	{

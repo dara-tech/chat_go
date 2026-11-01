@@ -133,25 +133,10 @@ class ChatFolderTopBar extends StatelessWidget {
                           : (isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.06)),
                       width: 0.8,
                     ),
-                    boxShadow: isSelected
-                        ? [
-                            BoxShadow(
-                              color: primaryColor.withOpacity(0.35),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ]
-                        : null,
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
-                        folder.iconData,
-                        size: 14,
-                        color: isSelected ? Colors.white : LiquidGlassTheme.textSecondary,
-                      ),
-                      const SizedBox(width: 6),
                       Text(
                         folder.name,
                         style: GoogleFonts.inter(
@@ -282,18 +267,11 @@ class ChatFolderLeftRail extends StatelessWidget {
                                         ? primaryColor
                                         : Colors.transparent,
                                   ),
-                                  boxShadow: isSelected
-                                      ? [
-                                          BoxShadow(
-                                            color: primaryColor.withOpacity(0.35),
-                                            blurRadius: 6,
-                                            offset: const Offset(0, 2),
-                                          ),
-                                        ]
-                                      : null,
                                 ),
                                 child: Icon(
-                                  folder.iconData,
+                                  folder.id == 'all_chats'
+                                      ? CupertinoIcons.tray_fill
+                                      : folder.iconData,
                                   size: 19,
                                   color: isSelected
                                       ? Colors.white

@@ -54,7 +54,7 @@ class ChatListScreenState extends State<ChatListScreen> {
   String? _errorMessage;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
-  String _activeFilter = 'All'; // 'All', 'Groups', 'Online', 'Unread'
+  final String _activeFilter = 'All';
   StreamSubscription? _socketSubscription;
   StreamSubscription<List<ChatConversation>>? _storageSubscription;
 
@@ -584,10 +584,6 @@ class ChatListScreenState extends State<ChatListScreen> {
                 onOpenSettings: _handleOpenChatFolders,
               ),
 
-            // Sub-filter chips only if inside All Chats
-            if (folderCtrl.activeFolderId == 'all_chats')
-              _buildFilterChips(onlineCount),
-
             Divider(
               height: 1,
               thickness: 0.8,
@@ -711,23 +707,6 @@ class ChatListScreenState extends State<ChatListScreen> {
           Row(
             children: [
               GestureDetector(
-                onTap: _handleOpenChatFolders,
-                behavior: HitTestBehavior.opaque,
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: LiquidGlassTheme.inputFill,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    CupertinoIcons.folder_fill,
-                    size: 17,
-                    color: LiquidGlassTheme.accentBlue,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              GestureDetector(
                 onTap: _openCreateGroupSheet,
                 behavior: HitTestBehavior.opaque,
                 child: Container(
@@ -767,89 +746,7 @@ class ChatListScreenState extends State<ChatListScreen> {
     );
   }
 
-  Widget _buildFilterChips(int onlineCount) {
-    final totalUnread = _conversations.where((c) => c.unreadCount > 0).length +
-        _groups.where((g) => g.unreadCount > 0).length;
 
-    final filters = [
-      {'label': 'All', 'count': _users.length + _groups.length},
-      {'label': 'Groups', 'count': _groups.length},
-      {'label': 'Online', 'count': onlineCount},
-      {'label': 'Unread', 'count': totalUnread},
-    ];
-
-    return Container(
-      height: 38,
-      margin: const EdgeInsets.fromLTRB(0, 4, 0, 8),
-      child: ListView.separated(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        scrollDirection: Axis.horizontal,
-        physics: const BouncingScrollPhysics(),
-        itemCount: filters.length,
-        separatorBuilder: (_, i) => const SizedBox(width: 8),
-        itemBuilder: (context, index) {
-          final filter = filters[index];
-          final label = filter['label'] as String;
-          final count = filter['count'] as int;
-          final isSelected = _activeFilter == label;
-
-          return GestureDetector(
-            onTap: () => setState(() => _activeFilter = label),
-            behavior: HitTestBehavior.opaque,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? LiquidGlassTheme.accentBlue
-                    : LiquidGlassTheme.inputFill,
-                borderRadius: BorderRadius.circular(999),
-                border: Border.all(
-                  color: isSelected
-                      ? LiquidGlassTheme.accentBlue
-                      : LiquidGlassTheme.borderSubtle,
-                  width: 0.8,
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    label,
-                    style: GoogleFonts.inter(
-                      fontSize: 12.5,
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                      color: isSelected ? Colors.white : LiquidGlassTheme.textSecondary,
-                    ),
-                  ),
-                  if (count > 0) ...[
-                    const SizedBox(width: 5),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? Colors.white.withOpacity(0.25)
-                            : LiquidGlassTheme.borderSubtle,
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Text(
-                        '$count',
-                        style: GoogleFonts.inter(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          color: isSelected ? Colors.white : LiquidGlassTheme.textMuted,
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
 
   Widget _buildEmptyFilteredState() {
     return Center(

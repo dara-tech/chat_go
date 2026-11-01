@@ -32,6 +32,8 @@ class ChatFoldersSettingsScreen extends StatefulWidget {
 
 class _ChatFoldersSettingsScreenState extends State<ChatFoldersSettingsScreen> {
   Map<int, ChatConversation> _convMap = {};
+  ChatFolder? _editingFolder;
+  bool _isCreatingFolder = false;
 
   @override
   void initState() {
@@ -49,26 +51,17 @@ class _ChatFoldersSettingsScreenState extends State<ChatFoldersSettingsScreen> {
   }
 
   void _openAddFolder() {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => EditChatFolderScreen(
-          availableUsers: widget.availableUsers,
-          availableGroups: widget.availableGroups,
-        ),
-      ),
-    );
+    setState(() {
+      _isCreatingFolder = true;
+      _editingFolder = null;
+    });
   }
 
   void _openEditFolder(ChatFolder folder) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => EditChatFolderScreen(
-          existingFolder: folder,
-          availableUsers: widget.availableUsers,
-          availableGroups: widget.availableGroups,
-        ),
-      ),
-    );
+    setState(() {
+      _editingFolder = folder;
+      _isCreatingFolder = false;
+    });
   }
 
   void _confirmDeleteFolder(ChatFolder folder) {
@@ -126,6 +119,23 @@ class _ChatFoldersSettingsScreenState extends State<ChatFoldersSettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // If the user tapped Add or Edit a folder, show EditChatFolderScreen embedded inside the right panel
+    if (_isCreatingFolder || _editingFolder != null) {
+      return EditChatFolderScreen(
+        existingFolder: _editingFolder,
+        availableUsers: widget.availableUsers,
+        availableGroups: widget.availableGroups,
+        onBack: () => setState(() {
+          _isCreatingFolder = false;
+          _editingFolder = null;
+        }),
+        onSaved: () => setState(() {
+          _isCreatingFolder = false;
+          _editingFolder = null;
+        }),
+      );
+    }
+
     return ListenableBuilder(
       listenable: Listenable.merge([
         ThemeController.instance,
@@ -175,83 +185,85 @@ class _ChatFoldersSettingsScreenState extends State<ChatFoldersSettingsScreen> {
           ),
           body: Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 620),
+              constraints: const BoxConstraints(maxWidth: 580),
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                const SizedBox(height: 12),
+                  children: [
+                    const SizedBox(height: 12),
 
-                // ── Hero Graphic & Description ──
-                const Center(child: ChatFolderHeroGraphic(size: 88)),
-                const SizedBox(height: 16),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Text(
-                    'Create folders for different groups of chats and quickly switch between them.',
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.inter(
-                      fontSize: 13.5,
-                      color: LiquidGlassTheme.textSecondary,
-                      height: 1.35,
+                    // ── Hero Graphic & Description ──
+                    const Center(child: ChatFolderHeroGraphic(size: 88)),
+                    const SizedBox(height: 16),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Text(
+                        'Create folders for different groups of chats and quickly switch between them.',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.inter(
+                          fontSize: 13.5,
+                          color: LiquidGlassTheme.textSecondary,
+                          height: 1.35,
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-                const SizedBox(height: 28),
+                    const SizedBox(height: 28),
 
-                // ── Section: FOLDERS ──
-                _buildSectionHeader('FOLDERS'),
-                _buildFoldersCard(
-                  context: context,
-                  isDark: isDark,
-                  primaryColor: primaryColor,
-                  controller: controller,
-                  folders: folders,
-                ),
-                _buildFooterCaption(
-                  'Drag and drop folders to change order. Right click to remove.',
-                ),
-                const SizedBox(height: 24),
+                    // ── Section: FOLDERS ──
+                    _buildSectionHeader('FOLDERS'),
+                    _buildFoldersCard(
+                      context: context,
+                      isDark: isDark,
+                      primaryColor: primaryColor,
+                      controller: controller,
+                      folders: folders,
+                    ),
+                    _buildFooterCaption(
+                      'Drag and drop folders to change order. Right click to remove.',
+                    ),
+                    const SizedBox(height: 24),
 
-                // ── Section: Show Folder Tags ──
-                _buildTagsCard(
-                  isDark: isDark,
-                  primaryColor: primaryColor,
-                  controller: controller,
-                ),
-                _buildFooterCaption(
-                  'Display folder names for each chat in the chat list.',
-                ),
-                const SizedBox(height: 24),
+                    // ── Section: Show Folder Tags ──
+                    _buildTagsCard(
+                      isDark: isDark,
+                      primaryColor: primaryColor,
+                      controller: controller,
+                    ),
+                    _buildFooterCaption(
+                      'Display folder names for each chat in the chat list.',
+                    ),
+                    const SizedBox(height: 24),
 
-                // ── Section: TABS VIEW ──
-                _buildSectionHeader('TABS VIEW'),
-                _buildTabsViewCard(
-                  isDark: isDark,
-                  primaryColor: primaryColor,
-                  controller: controller,
+                    // ── Section: TABS VIEW ──
+                    _buildSectionHeader('TABS VIEW'),
+                    _buildTabsViewCard(
+                      isDark: isDark,
+                      primaryColor: primaryColor,
+                      controller: controller,
+                    ),
+                    _buildFooterCaption(
+                      'If you have many folders, try moving tabs to the left.',
+                    ),
+                    const SizedBox(height: 48),
+                  ],
                 ),
-                _buildFooterCaption(
-                  'If you have many folders, try moving tabs to the left.',
-                ),
-                const SizedBox(height: 48),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
-    );
+        );
       },
     );
   }
+
+  // ── Sub-builders ──────────────────────────────────────────────────────────
 
   Widget _buildSectionHeader(String title) {
     return Align(
       alignment: Alignment.centerLeft,
       child: Padding(
-        padding: const EdgeInsets.only(left: 8, bottom: 8),
+        padding: const EdgeInsets.only(left: 4, bottom: 8),
         child: Text(
           title,
           style: GoogleFonts.inter(
@@ -269,7 +281,7 @@ class _ChatFoldersSettingsScreenState extends State<ChatFoldersSettingsScreen> {
     return Align(
       alignment: Alignment.centerLeft,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(10, 8, 8, 0),
+        padding: const EdgeInsets.only(left: 4, top: 6),
         child: Text(
           text,
           style: GoogleFonts.inter(
@@ -299,117 +311,119 @@ class _ChatFoldersSettingsScreenState extends State<ChatFoldersSettingsScreen> {
         color: cardBg,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: borderColor),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.2 : 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(
         children: [
-          ReorderableListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: folders.length,
-            onReorder: (oldIdx, newIdx) {
-              // Note: folder index 0 is "all_chats" in controller._folders,
-              // so add +1 offset when reordering customFolders
-              controller.reorderFolders(oldIdx + 1, newIdx + 1);
-            },
-            itemBuilder: (context, index) {
-              final folder = folders[index];
-              final count = controller.calculateCountForFolder(
-                folder,
-                users: widget.availableUsers,
-                groups: widget.availableGroups,
-                convMap: _convMap,
-              );
+          if (folders.isNotEmpty)
+            ReorderableListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              buildDefaultDragHandles: false,
+              itemCount: folders.length,
+              onReorder: (oldIndex, newIndex) {
+                controller.reorderFolders(oldIndex, newIndex);
+              },
+              itemBuilder: (context, index) {
+                final folder = folders[index];
+                final count = controller.calculateCountForFolder(
+                  folder,
+                  users: widget.availableUsers,
+                  groups: widget.availableGroups,
+                  convMap: _convMap,
+                );
 
-              return Material(
-                key: ValueKey(folder.id),
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: () => _openEditFolder(folder),
-                  onLongPress: () => _confirmDeleteFolder(folder),
-                  onSecondaryTap: () => _confirmDeleteFolder(folder),
-                  child: Column(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 13,
-                        ),
-                        child: Row(
-                          children: [
-                            // Folder Icon in soft box
-                            Container(
-                              width: 34,
-                              height: 34,
-                              decoration: BoxDecoration(
-                                color: primaryColor.withOpacity(0.12),
-                                borderRadius: BorderRadius.circular(9),
-                              ),
-                              child: Icon(
-                                folder.iconData,
-                                color: primaryColor,
-                                size: 18,
-                              ),
-                            ),
-                            const SizedBox(width: 14),
-
-                            // Folder Name
-                            Expanded(
-                              child: Text(
-                                folder.name,
-                                style: GoogleFonts.inter(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w500,
-                                  color: LiquidGlassTheme.textPrimary,
+                return Material(
+                  key: ValueKey(folder.id),
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () => _openEditFolder(folder),
+                    onSecondaryTapDown: (details) {
+                      _showFolderContextMenu(context, details.globalPosition, folder);
+                    },
+                    child: Column(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 11,
+                          ),
+                          child: Row(
+                            children: [
+                              // Folder Icon
+                              Container(
+                                width: 32,
+                                height: 32,
+                                decoration: BoxDecoration(
+                                  color: primaryColor.withOpacity(0.12),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Icon(
+                                  folder.iconData,
+                                  color: primaryColor,
+                                  size: 17,
                                 ),
                               ),
-                            ),
+                              const SizedBox(width: 14),
 
-                            // Count badge
-                            Text(
-                              count.toString(),
-                              style: GoogleFonts.inter(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                                color: LiquidGlassTheme.textSecondary,
+                              // Name
+                              Expanded(
+                                child: Text(
+                                  folder.name,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w500,
+                                    color: LiquidGlassTheme.textPrimary,
+                                  ),
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 8),
 
-                            // Chevron >
-                            Icon(
-                              CupertinoIcons.chevron_right,
-                              size: 14,
-                              color: LiquidGlassTheme.textMuted,
-                            ),
-                          ],
+                              // Chat count badge
+                              if (count > 0)
+                                Text(
+                                  '$count',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 13,
+                                    color: LiquidGlassTheme.textSecondary,
+                                  ),
+                                ),
+                              const SizedBox(width: 10),
+
+                              // Reorder drag handle
+                              ReorderableDragStartListener(
+                                index: index,
+                                child: Icon(
+                                  CupertinoIcons.bars,
+                                  color: LiquidGlassTheme.textMuted,
+                                  size: 18,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                      if (index < folders.length - 1)
-                        Divider(
-                          height: 1,
-                          thickness: 0.6,
-                          indent: 64,
-                          color: borderColor,
-                        ),
-                    ],
+                        if (index < folders.length - 1)
+                          Divider(
+                            height: 1,
+                            thickness: 0.8,
+                            indent: 62,
+                            color: borderColor,
+                          ),
+                      ],
+                    ),
                   ),
-                ),
-              );
-            },
-          ),
+                );
+              },
+            ),
 
           if (folders.isNotEmpty)
-            Divider(height: 1, thickness: 0.6, color: borderColor),
+            Divider(
+              height: 1,
+              thickness: 0.8,
+              indent: 0,
+              color: borderColor,
+            ),
 
-          // Add a Custom Folder action row
+          // ── "Add a Custom Folder" Row ──
           Material(
             color: Colors.transparent,
             child: InkWell(
@@ -422,14 +436,14 @@ class _ChatFoldersSettingsScreenState extends State<ChatFoldersSettingsScreen> {
                 child: Row(
                   children: [
                     Container(
-                      width: 34,
-                      height: 34,
+                      width: 32,
+                      height: 32,
                       decoration: BoxDecoration(
                         color: primaryColor.withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(9),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(
-                        CupertinoIcons.plus,
+                        CupertinoIcons.add,
                         color: primaryColor,
                         size: 18,
                       ),
@@ -447,8 +461,8 @@ class _ChatFoldersSettingsScreenState extends State<ChatFoldersSettingsScreen> {
                     ),
                     Icon(
                       CupertinoIcons.chevron_right,
-                      size: 14,
-                      color: primaryColor.withOpacity(0.6),
+                      size: 15,
+                      color: LiquidGlassTheme.textMuted,
                     ),
                   ],
                 ),
@@ -458,6 +472,53 @@ class _ChatFoldersSettingsScreenState extends State<ChatFoldersSettingsScreen> {
         ],
       ),
     );
+  }
+
+  void _showFolderContextMenu(
+    BuildContext context,
+    Offset position,
+    ChatFolder folder,
+  ) {
+    showMenu(
+      context: context,
+      position: RelativeRect.fromLTRB(
+        position.dx,
+        position.dy,
+        position.dx + 1,
+        position.dy + 1,
+      ),
+      items: [
+        PopupMenuItem(
+          value: 'edit',
+          child: Row(
+            children: [
+              const Icon(CupertinoIcons.pencil, size: 16),
+              const SizedBox(width: 10),
+              Text('Edit "${folder.name}"', style: GoogleFonts.inter(fontSize: 14)),
+            ],
+          ),
+        ),
+        PopupMenuItem(
+          value: 'delete',
+          child: Row(
+            children: [
+              const Icon(CupertinoIcons.trash, size: 16, color: Color(0xFFEF4444)),
+              const SizedBox(width: 10),
+              Text(
+                'Delete Folder',
+                style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFFEF4444)),
+              ),
+            ],
+          ),
+        ),
+      ],
+    ).then((choice) {
+      if (choice == 'edit') {
+        _openEditFolder(folder);
+      } else if (choice == 'delete') {
+        _confirmDeleteFolder(folder);
+      }
+    });
   }
 
   Widget _buildTagsCard({
@@ -471,31 +532,29 @@ class _ChatFoldersSettingsScreenState extends State<ChatFoldersSettingsScreen> {
         : Colors.black.withOpacity(0.06);
 
     return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: cardBg,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: borderColor),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.2 : 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            'Show Folder Tags',
+            style: GoogleFonts.inter(
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+              color: LiquidGlassTheme.textPrimary,
+            ),
+          ),
+          CupertinoSwitch(
+            value: controller.showFolderTags,
+            activeColor: primaryColor,
+            onChanged: (val) => controller.setShowFolderTags(val),
           ),
         ],
-      ),
-      child: SwitchListTile.adaptive(
-        value: controller.showFolderTags,
-        activeColor: primaryColor,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-        title: Text(
-          'Show Folder Tags',
-          style: GoogleFonts.inter(
-            fontSize: 15,
-            fontWeight: FontWeight.w500,
-            color: LiquidGlassTheme.textPrimary,
-          ),
-        ),
-        onChanged: (val) => controller.setShowFolderTags(val),
       ),
     );
   }
@@ -511,33 +570,28 @@ class _ChatFoldersSettingsScreenState extends State<ChatFoldersSettingsScreen> {
         : Colors.black.withOpacity(0.06);
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
       decoration: BoxDecoration(
         color: cardBg,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: borderColor),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.2 : 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
+          // ── Top View Option ──
           TabsViewMockupCard(
-            isTabsOnLeft: false,
-            isSelected: controller.isTabsOnTop,
             label: 'Tabs at the top',
+            isSelected: controller.tabsView == 'top',
+            isTabsOnLeft: false,
             onTap: () => controller.setTabsView('top'),
           ),
-          const SizedBox(width: 12),
+
+          // ── Left View Option ──
           TabsViewMockupCard(
-            isTabsOnLeft: true,
-            isSelected: controller.isTabsOnLeft,
             label: 'Tabs on the left',
+            isSelected: controller.tabsView == 'left',
+            isTabsOnLeft: true,
             onTap: () => controller.setTabsView('left'),
           ),
         ],
@@ -545,4 +599,3 @@ class _ChatFoldersSettingsScreenState extends State<ChatFoldersSettingsScreen> {
     );
   }
 }
-

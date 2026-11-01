@@ -13,12 +13,16 @@ class EditChatFolderScreen extends StatefulWidget {
   final ChatFolder? existingFolder;
   final List<UserModel> availableUsers;
   final List<ChatGroup> availableGroups;
+  final VoidCallback? onBack;
+  final VoidCallback? onSaved;
 
   const EditChatFolderScreen({
     super.key,
     this.existingFolder,
     this.availableUsers = const [],
     this.availableGroups = const [],
+    this.onBack,
+    this.onSaved,
   });
 
   @override
@@ -99,13 +103,29 @@ class _EditChatFolderScreenState extends State<EditChatFolderScreen> {
       ChatFolderController.instance.createFolder(folder);
     }
 
-    Navigator.of(context).pop();
+    if (widget.onSaved != null) {
+      widget.onSaved!();
+    } else {
+      Navigator.of(context).maybePop();
+    }
   }
 
   void _delete() {
     if (widget.existingFolder != null) {
       ChatFolderController.instance.deleteFolder(widget.existingFolder!.id);
-      Navigator.of(context).pop();
+      if (widget.onBack != null) {
+        widget.onBack!();
+      } else {
+        Navigator.of(context).maybePop();
+      }
+    }
+  }
+
+  void _handleBack() {
+    if (widget.onBack != null) {
+      widget.onBack!();
+    } else {
+      Navigator.of(context).maybePop();
     }
   }
 
@@ -140,15 +160,21 @@ class _EditChatFolderScreenState extends State<EditChatFolderScreen> {
   Widget build(BuildContext context) {
     final isDark = ThemeController.instance.isDark;
     final primaryColor = ThemeController.instance.primaryColor;
+    final borderColor = isDark
+        ? Colors.white.withOpacity(0.08)
+        : Colors.black.withOpacity(0.06);
 
     return Scaffold(
-      backgroundColor: ThemeController.instance.scaffoldBg,
+      backgroundColor: isDark
+          ? const Color(0xFF0F172A)
+          : ThemeController.instance.scaffoldBg,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
+        centerTitle: true,
         leading: IconButton(
           icon: const Icon(CupertinoIcons.back),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: _handleBack,
         ),
         title: Text(
           isEditing ? 'Edit Folder' : 'New Folder',
@@ -175,24 +201,24 @@ class _EditChatFolderScreenState extends State<EditChatFolderScreen> {
       ),
       body: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 620),
+          constraints: const BoxConstraints(maxWidth: 580),
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // ── Name & Icon Input Card ──
-                _buildNameAndIconCard(isDark, primaryColor),
+                _buildNameAndIconCard(isDark, primaryColor, borderColor),
                 const SizedBox(height: 24),
 
                 // ── Included Section ──
                 _buildSectionHeader('INCLUDED CHATS'),
-                _buildIncludedCard(isDark, primaryColor),
+                _buildIncludedCard(isDark, primaryColor, borderColor),
                 const SizedBox(height: 24),
 
                 // ── Excluded Section ──
                 _buildSectionHeader('EXCLUDED CHATS'),
-                _buildExcludedCard(isDark, primaryColor),
+                _buildExcludedCard(isDark, primaryColor, borderColor),
                 const SizedBox(height: 32),
 
                 // ── Delete Button ──
@@ -235,15 +261,15 @@ class _EditChatFolderScreenState extends State<EditChatFolderScreen> {
     );
   }
 
-  Widget _buildNameAndIconCard(bool isDark, Color primaryColor) {
+  Widget _buildNameAndIconCard(bool isDark, Color primaryColor, Color borderColor) {
+    final cardBg = isDark ? const Color(0xFF1E2430) : Colors.white;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E2430) : Colors.white,
+        color: cardBg,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.06),
-        ),
+        border: Border.all(color: borderColor),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -290,7 +316,7 @@ class _EditChatFolderScreenState extends State<EditChatFolderScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          const Divider(height: 1),
+          Divider(height: 1, color: borderColor),
           const SizedBox(height: 12),
           Text(
             'CHOOSE ICON',
@@ -301,7 +327,7 @@ class _EditChatFolderScreenState extends State<EditChatFolderScreen> {
             ),
           ),
           const SizedBox(height: 10),
-          // Icon Picker Row
+          // Icon Picker Wrap
           Wrap(
             spacing: 10,
             runSpacing: 10,
@@ -338,129 +364,202 @@ class _EditChatFolderScreenState extends State<EditChatFolderScreen> {
     );
   }
 
-  Widget _buildIncludedCard(bool isDark, Color primaryColor) {
+  Widget _buildToggleRow({
+    required String title,
+    String? subtitle,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+    required Color primaryColor,
+    required Color borderColor,
+    bool isLast = false,
+  }) {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: GoogleFonts.inter(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                        color: LiquidGlassTheme.textPrimary,
+                      ),
+                    ),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          color: LiquidGlassTheme.textMuted,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              CupertinoSwitch(
+                value: value,
+                activeColor: primaryColor,
+                onChanged: onChanged,
+              ),
+            ],
+          ),
+        ),
+        if (!isLast)
+          Divider(height: 1, indent: 16, color: borderColor),
+      ],
+    );
+  }
+
+  Widget _buildIncludedCard(bool isDark, Color primaryColor, Color borderColor) {
+    final cardBg = isDark ? const Color(0xFF1E2430) : Colors.white;
+
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E2430) : Colors.white,
+        color: cardBg,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.06),
-        ),
+        border: Border.all(color: borderColor),
       ),
       child: Column(
         children: [
-          // Filter presets
-          SwitchListTile.adaptive(
-            title: Text(
-              'Personal Chats',
-              style: GoogleFonts.inter(fontSize: 14.5, color: LiquidGlassTheme.textPrimary),
-            ),
-            subtitle: Text(
-              '1-on-1 conversations',
-              style: GoogleFonts.inter(fontSize: 12, color: LiquidGlassTheme.textMuted),
-            ),
+          _buildToggleRow(
+            title: 'Personal Chats',
+            subtitle: '1-on-1 conversations',
             value: _includePersonal,
-            activeColor: primaryColor,
             onChanged: (v) => setState(() => _includePersonal = v),
+            primaryColor: primaryColor,
+            borderColor: borderColor,
           ),
-          const Divider(height: 1, indent: 16),
-          SwitchListTile.adaptive(
-            title: Text(
-              'Groups',
-              style: GoogleFonts.inter(fontSize: 14.5, color: LiquidGlassTheme.textPrimary),
-            ),
-            subtitle: Text(
-              'Group chats',
-              style: GoogleFonts.inter(fontSize: 12, color: LiquidGlassTheme.textMuted),
-            ),
+          _buildToggleRow(
+            title: 'Groups',
+            subtitle: 'Group chats',
             value: _includeGroups,
-            activeColor: primaryColor,
             onChanged: (v) => setState(() => _includeGroups = v),
+            primaryColor: primaryColor,
+            borderColor: borderColor,
           ),
-          const Divider(height: 1, indent: 16),
-          SwitchListTile.adaptive(
-            title: Text(
-              'Unread Only',
-              style: GoogleFonts.inter(fontSize: 14.5, color: LiquidGlassTheme.textPrimary),
-            ),
-            subtitle: Text(
-              'Only show chats with unread messages',
-              style: GoogleFonts.inter(fontSize: 12, color: LiquidGlassTheme.textMuted),
-            ),
+          _buildToggleRow(
+            title: 'Unread Only',
+            subtitle: 'Only show chats with unread messages',
             value: _includeUnreadOnly,
-            activeColor: primaryColor,
             onChanged: (v) => setState(() => _includeUnreadOnly = v),
+            primaryColor: primaryColor,
+            borderColor: borderColor,
           ),
-          const Divider(height: 1, indent: 16),
 
           // Add specific chats row
-          ListTile(
-            leading: Icon(CupertinoIcons.plus_circle_fill, color: primaryColor),
-            title: Text(
-              'Add Specific Chats',
-              style: GoogleFonts.inter(
-                fontSize: 14.5,
-                fontWeight: FontWeight.w600,
-                color: primaryColor,
+          InkWell(
+            onTap: () => _openChatPicker(isInclude: true),
+            borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+              child: Row(
+                children: [
+                  Icon(CupertinoIcons.plus_circle_fill, size: 20, color: primaryColor),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Add Specific Chats',
+                      style: GoogleFonts.inter(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: primaryColor,
+                      ),
+                    ),
+                  ),
+                  if (_includedUserIds.isNotEmpty || _includedGroupIds.isNotEmpty)
+                    Text(
+                      '${_includedUserIds.length + _includedGroupIds.length} added',
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        color: LiquidGlassTheme.textSecondary,
+                      ),
+                    ),
+                  const SizedBox(width: 4),
+                  Icon(
+                    CupertinoIcons.chevron_right,
+                    size: 14,
+                    color: LiquidGlassTheme.textMuted,
+                  ),
+                ],
               ),
             ),
-            trailing: Text(
-              '${_includedUserIds.length + _includedGroupIds.length} added',
-              style: GoogleFonts.inter(fontSize: 13, color: LiquidGlassTheme.textSecondary),
-            ),
-            onTap: () => _openChatPicker(isInclude: true),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildExcludedCard(bool isDark, Color primaryColor) {
+  Widget _buildExcludedCard(bool isDark, Color primaryColor, Color borderColor) {
+    final cardBg = isDark ? const Color(0xFF1E2430) : Colors.white;
+
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E2430) : Colors.white,
+        color: cardBg,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.06),
-        ),
+        border: Border.all(color: borderColor),
       ),
       child: Column(
         children: [
-          SwitchListTile.adaptive(
-            title: Text(
-              'Muted Chats',
-              style: GoogleFonts.inter(fontSize: 14.5, color: LiquidGlassTheme.textPrimary),
-            ),
+          _buildToggleRow(
+            title: 'Muted Chats',
             value: _excludeMuted,
-            activeColor: primaryColor,
             onChanged: (v) => setState(() => _excludeMuted = v),
+            primaryColor: primaryColor,
+            borderColor: borderColor,
           ),
-          const Divider(height: 1, indent: 16),
-          SwitchListTile.adaptive(
-            title: Text(
-              'Read Chats',
-              style: GoogleFonts.inter(fontSize: 14.5, color: LiquidGlassTheme.textPrimary),
-            ),
+          _buildToggleRow(
+            title: 'Read Chats',
             value: _excludeRead,
-            activeColor: primaryColor,
             onChanged: (v) => setState(() => _excludeRead = v),
+            primaryColor: primaryColor,
+            borderColor: borderColor,
           ),
-          const Divider(height: 1, indent: 16),
-          ListTile(
-            leading: const Icon(CupertinoIcons.minus_circle_fill, color: Color(0xFFEF4444)),
-            title: Text(
-              'Exclude Specific Chats',
-              style: GoogleFonts.inter(
-                fontSize: 14.5,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFFEF4444),
+
+          // Exclude specific chats row
+          InkWell(
+            onTap: () => _openChatPicker(isInclude: false),
+            borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+              child: Row(
+                children: [
+                  const Icon(CupertinoIcons.minus_circle_fill, size: 20, color: Color(0xFFEF4444)),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Exclude Specific Chats',
+                      style: GoogleFonts.inter(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFFEF4444),
+                      ),
+                    ),
+                  ),
+                  if (_excludedUserIds.isNotEmpty || _excludedGroupIds.isNotEmpty)
+                    Text(
+                      '${_excludedUserIds.length + _excludedGroupIds.length} excluded',
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        color: LiquidGlassTheme.textSecondary,
+                      ),
+                    ),
+                  const SizedBox(width: 4),
+                  Icon(
+                    CupertinoIcons.chevron_right,
+                    size: 14,
+                    color: LiquidGlassTheme.textMuted,
+                  ),
+                ],
               ),
             ),
-            trailing: Text(
-              '${_excludedUserIds.length + _excludedGroupIds.length} excluded',
-              style: GoogleFonts.inter(fontSize: 13, color: LiquidGlassTheme.textSecondary),
-            ),
-            onTap: () => _openChatPicker(isInclude: false),
           ),
         ],
       ),
@@ -582,79 +681,91 @@ class _ChatPickerSheetState extends State<_ChatPickerSheet> {
               ),
               child: TextField(
                 onChanged: (v) => setState(() => _search = v.trim().toLowerCase()),
+                style: GoogleFonts.inter(fontSize: 14, color: LiquidGlassTheme.textPrimary),
                 decoration: InputDecoration(
+                  prefixIcon: Icon(CupertinoIcons.search, size: 16, color: LiquidGlassTheme.textMuted),
                   hintText: 'Search chats...',
-                  prefixIcon: const Icon(CupertinoIcons.search, size: 18),
+                  hintStyle: GoogleFonts.inter(fontSize: 14, color: LiquidGlassTheme.textMuted),
                   border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 9),
                 ),
               ),
             ),
           ),
 
-          // List of Chats
+          // Chat items
           Expanded(
             child: ListView(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               children: [
-                if (filteredGroups.isNotEmpty) ...[
+                if (filteredUsers.isNotEmpty) ...[
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+                    padding: const EdgeInsets.only(top: 8, bottom: 4),
                     child: Text(
-                      'GROUPS',
-                      style: GoogleFonts.inter(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: LiquidGlassTheme.textMuted,
-                      ),
+                      'USERS',
+                      style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: LiquidGlassTheme.textMuted),
                     ),
                   ),
-                  ...filteredGroups.map((g) {
-                    final selected = _selectedGroups.contains(g.id);
-                    return CheckboxListTile(
-                      value: selected,
-                      activeColor: primaryColor,
-                      title: Text(g.name, style: GoogleFonts.inter(fontSize: 14.5)),
-                      subtitle: Text('${g.memberCount} members', style: GoogleFonts.inter(fontSize: 12)),
-                      onChanged: (v) {
+                  ...filteredUsers.map((u) {
+                    final isChecked = _selectedUsers.contains(u.id);
+                    return ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: CircleAvatar(
+                        radius: 18,
+                        backgroundColor: primaryColor.withOpacity(0.15),
+                        child: Text(
+                          u.displayName.isNotEmpty ? u.displayName[0].toUpperCase() : '?',
+                          style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      title: Text(u.displayName, style: GoogleFonts.inter(fontSize: 14.5, color: LiquidGlassTheme.textPrimary)),
+                      subtitle: Text('@${u.username}', style: GoogleFonts.inter(fontSize: 12, color: LiquidGlassTheme.textMuted)),
+                      trailing: Icon(
+                        isChecked ? CupertinoIcons.checkmark_circle_fill : CupertinoIcons.circle,
+                        color: isChecked ? primaryColor : LiquidGlassTheme.textMuted,
+                      ),
+                      onTap: () {
                         setState(() {
-                          if (v == true) {
-                            _selectedGroups.add(g.id);
+                          if (isChecked) {
+                            _selectedUsers.remove(u.id);
                           } else {
-                            _selectedGroups.remove(g.id);
+                            _selectedUsers.add(u.id);
                           }
                         });
                       },
                     );
                   }),
                 ],
-                if (filteredUsers.isNotEmpty) ...[
+
+                if (filteredGroups.isNotEmpty) ...[
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+                    padding: const EdgeInsets.only(top: 12, bottom: 4),
                     child: Text(
-                      'CONTACTS',
-                      style: GoogleFonts.inter(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: LiquidGlassTheme.textMuted,
-                      ),
+                      'GROUPS',
+                      style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: LiquidGlassTheme.textMuted),
                     ),
                   ),
-                  ...filteredUsers.map((u) {
-                    final selected = _selectedUsers.contains(u.id);
-                    return CheckboxListTile(
-                      value: selected,
-                      activeColor: primaryColor,
-                      title: Text(
-                        u.displayName.isNotEmpty ? u.displayName : u.username,
-                        style: GoogleFonts.inter(fontSize: 14.5),
+                  ...filteredGroups.map((g) {
+                    final isChecked = _selectedGroups.contains(g.id);
+                    return ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: CircleAvatar(
+                        radius: 18,
+                        backgroundColor: primaryColor.withOpacity(0.15),
+                        child: Icon(CupertinoIcons.person_2_fill, color: primaryColor, size: 18),
                       ),
-                      subtitle: Text('@${u.username}', style: GoogleFonts.inter(fontSize: 12)),
-                      onChanged: (v) {
+                      title: Text(g.name, style: GoogleFonts.inter(fontSize: 14.5, color: LiquidGlassTheme.textPrimary)),
+                      subtitle: Text('${g.members.length} members', style: GoogleFonts.inter(fontSize: 12, color: LiquidGlassTheme.textMuted)),
+                      trailing: Icon(
+                        isChecked ? CupertinoIcons.checkmark_circle_fill : CupertinoIcons.circle,
+                        color: isChecked ? primaryColor : LiquidGlassTheme.textMuted,
+                      ),
+                      onTap: () {
                         setState(() {
-                          if (v == true) {
-                            _selectedUsers.add(u.id);
+                          if (isChecked) {
+                            _selectedGroups.remove(g.id);
                           } else {
-                            _selectedUsers.remove(u.id);
+                            _selectedGroups.add(g.id);
                           }
                         });
                       },
