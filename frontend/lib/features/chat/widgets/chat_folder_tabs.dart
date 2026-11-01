@@ -203,12 +203,15 @@ class ChatFolderLeftRail extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: ChatFolderController.instance,
+      listenable: Listenable.merge([
+        ChatFolderController.instance,
+        ThemeController.instance,
+      ]),
       builder: (context, _) {
         final controller = ChatFolderController.instance;
         final folders = controller.folders;
         final activeId = controller.activeFolderId;
-        final primaryColor = const Color(0xFF2AABEE);
+        final primaryColor = ThemeController.instance.primaryColor;
         final isDark = ThemeController.instance.isDark;
 
         return Container(
@@ -297,7 +300,7 @@ class ChatFolderLeftRail extends StatelessWidget {
                                         vertical: 1.5,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFF2AABEE),
+                                        color: primaryColor,
                                         borderRadius: BorderRadius.circular(10),
                                         border: Border.all(
                                           color: isDark

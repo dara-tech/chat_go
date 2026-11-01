@@ -176,7 +176,7 @@ class _DesktopLayoutState extends State<DesktopLayout>
       ]),
       builder: (context, _) {
         final isDark = ThemeController.instance.isDark;
-        final primaryColor = const Color(0xFF2AABEE);
+        final primaryColor = ThemeController.instance.primaryColor;
 
         return Scaffold(
           backgroundColor: ThemeController.instance.scaffoldBg,

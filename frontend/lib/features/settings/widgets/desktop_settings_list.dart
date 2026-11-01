@@ -34,224 +34,229 @@ class _DesktopSettingsListState extends State<DesktopSettingsList> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = ThemeController.instance.isDark;
-    final primaryColor = const Color(0xFF2AABEE); // Telegram macOS vibrant blue
-    final borderColor = isDark
-        ? Colors.white.withOpacity(0.06)
-        : Colors.black.withOpacity(0.06);
+    return ListenableBuilder(
+      listenable: ThemeController.instance,
+      builder: (context, _) {
+        final isDark = ThemeController.instance.isDark;
+        final primaryColor = ThemeController.instance.primaryColor;
+        final borderColor = isDark
+            ? Colors.white.withOpacity(0.06)
+            : Colors.black.withOpacity(0.06);
 
-    return Container(
-      color: isDark ? const Color(0xFF131822) : Colors.white,
-      child: Column(
-        children: [
-          // ── Header: QR icon + Title "Settings" + "Edit" action ──
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                IconButton(
-                  icon: const Icon(CupertinoIcons.qrcode, size: 20),
-                  color: primaryColor,
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                  onPressed: () {},
-                ),
-                Text(
-                  'Settings',
-                  style: GoogleFonts.outfit(
-                    fontSize: 16.5,
-                    fontWeight: FontWeight.w600,
-                    color: LiquidGlassTheme.textPrimary,
-                  ),
-                ),
-                TextButton(
-                  onPressed: () {},
-                  style: TextButton.styleFrom(
-                    padding: EdgeInsets.zero,
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                  child: Text(
-                    'Edit',
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
+        return Container(
+          color: isDark ? const Color(0xFF131822) : Colors.white,
+          child: Column(
+            children: [
+              // ── Header: QR icon + Title "Settings" + "Edit" action ──
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    IconButton(
+                      icon: const Icon(CupertinoIcons.qrcode, size: 20),
                       color: primaryColor,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      onPressed: () {},
                     ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // ── Search bar ──
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-            child: Container(
-              height: 34,
-              decoration: BoxDecoration(
-                color: isDark
-                    ? Colors.white.withOpacity(0.06)
-                    : Colors.black.withOpacity(0.05),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Row(
-                children: [
-                  const SizedBox(width: 10),
-                  Icon(
-                    CupertinoIcons.search,
-                    size: 15,
-                    color: LiquidGlassTheme.textMuted,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: TextField(
-                      controller: _searchCtrl,
-                      onChanged: (v) => setState(() => _searchQuery = v.trim().toLowerCase()),
-                      style: GoogleFonts.inter(
-                        fontSize: 13.5,
+                    Text(
+                      'Settings',
+                      style: GoogleFonts.outfit(
+                        fontSize: 16.5,
+                        fontWeight: FontWeight.w600,
                         color: LiquidGlassTheme.textPrimary,
                       ),
-                      decoration: InputDecoration(
-                        hintText: 'Search',
-                        hintStyle: GoogleFonts.inter(
-                          fontSize: 13.5,
-                          color: LiquidGlassTheme.textMuted,
+                    ),
+                    TextButton(
+                      onPressed: () {},
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: Text(
+                        'Edit',
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: primaryColor,
                         ),
-                        border: InputBorder.none,
-                        isDense: true,
-                        contentPadding: EdgeInsets.zero,
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
+
+              // ── Search bar ──
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                child: Container(
+                  height: 34,
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? Colors.white.withOpacity(0.06)
+                        : Colors.black.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    children: [
+                      const SizedBox(width: 10),
+                      Icon(
+                        CupertinoIcons.search,
+                        size: 15,
+                        color: LiquidGlassTheme.textMuted,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: TextField(
+                          controller: _searchCtrl,
+                          onChanged: (v) => setState(() => _searchQuery = v.trim().toLowerCase()),
+                          style: GoogleFonts.inter(
+                            fontSize: 13.5,
+                            color: LiquidGlassTheme.textPrimary,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: 'Search',
+                            hintStyle: GoogleFonts.inter(
+                              fontSize: 13.5,
+                              color: LiquidGlassTheme.textMuted,
+                            ),
+                            border: InputBorder.none,
+                            isDense: true,
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+
+              // ── Settings categories list ──
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  children: [
+                    _buildItem(
+                      key: 'set_profile_color',
+                      title: 'Set Profile Color',
+                      icon: CupertinoIcons.paintbrush,
+                      iconBg: const Color(0xFF06B6D4),
+                      primaryColor: primaryColor,
+                    ),
+                    _buildItem(
+                      key: 'add_account',
+                      title: 'Add Account',
+                      icon: CupertinoIcons.person_badge_plus,
+                      iconBg: const Color(0xFF3B82F6),
+                      primaryColor: primaryColor,
+                    ),
+
+                    _buildDivider(borderColor),
+
+                    _buildItem(
+                      key: 'my_profile',
+                      title: 'My Profile',
+                      icon: CupertinoIcons.person_crop_circle_fill,
+                      iconBg: const Color(0xFFEF4444),
+                      primaryColor: primaryColor,
+                    ),
+
+                    _buildDivider(borderColor),
+
+                    _buildItem(
+                      key: 'general',
+                      title: 'General',
+                      icon: CupertinoIcons.gear_alt_fill,
+                      iconBg: const Color(0xFF64748B),
+                      primaryColor: primaryColor,
+                    ),
+                    _buildItem(
+                      key: 'notifications',
+                      title: 'Notifications and Sounds',
+                      icon: CupertinoIcons.bell_fill,
+                      iconBg: const Color(0xFFEF4444),
+                      badge: '!',
+                      primaryColor: primaryColor,
+                    ),
+                    _buildItem(
+                      key: 'privacy',
+                      title: 'Privacy and Security',
+                      icon: CupertinoIcons.lock_fill,
+                      iconBg: const Color(0xFF3B82F6),
+                      primaryColor: primaryColor,
+                    ),
+                    _buildItem(
+                      key: 'data_storage',
+                      title: 'Data and Storage',
+                      icon: CupertinoIcons.circle_grid_hex_fill,
+                      iconBg: const Color(0xFF10B981),
+                      primaryColor: primaryColor,
+                    ),
+                    _buildItem(
+                      key: 'active_sessions',
+                      title: 'Active Sessions',
+                      icon: CupertinoIcons.device_laptop,
+                      iconBg: const Color(0xFFF59E0B),
+                      trailingText: '4',
+                      primaryColor: primaryColor,
+                    ),
+                    _buildItem(
+                      key: 'appearance',
+                      title: 'Appearance',
+                      icon: CupertinoIcons.pencil,
+                      iconBg: const Color(0xFF06B6D4),
+                      primaryColor: primaryColor,
+                    ),
+                    _buildItem(
+                      key: 'language',
+                      title: 'Language',
+                      icon: CupertinoIcons.globe,
+                      iconBg: const Color(0xFF8B5CF6),
+                      trailingText: 'English',
+                      primaryColor: primaryColor,
+                    ),
+                    _buildItem(
+                      key: 'stickers',
+                      title: 'Stickers and Emoji',
+                      icon: CupertinoIcons.smiley_fill,
+                      iconBg: const Color(0xFFF97316),
+                      primaryColor: primaryColor,
+                    ),
+                    // ── CHAT FOLDERS ITEM (Active pill in theme primaryColor) ──
+                    _buildItem(
+                      key: 'chat_folders',
+                      title: 'Chat Folders',
+                      icon: CupertinoIcons.folder_fill,
+                      iconBg: primaryColor,
+                      primaryColor: primaryColor,
+                    ),
+                    _buildItem(
+                      key: 'update',
+                      title: 'Update',
+                      icon: CupertinoIcons.arrow_2_circlepath,
+                      iconBg: const Color(0xFF3B82F6),
+                      primaryColor: primaryColor,
+                    ),
+
+                    _buildDivider(borderColor),
+
+                    _buildItem(
+                      key: 'premium',
+                      title: 'Telegram Premium',
+                      icon: CupertinoIcons.star_fill,
+                      iconBg: const Color(0xFF8B5CF6),
+                      primaryColor: primaryColor,
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-
-          // ── Settings categories list ──
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              children: [
-                _buildItem(
-                  key: 'set_profile_color',
-                  title: 'Set Profile Color',
-                  icon: CupertinoIcons.paintbrush,
-                  iconBg: const Color(0xFF06B6D4),
-                  primaryColor: primaryColor,
-                ),
-                _buildItem(
-                  key: 'add_account',
-                  title: 'Add Account',
-                  icon: CupertinoIcons.person_badge_plus,
-                  iconBg: const Color(0xFF3B82F6),
-                  primaryColor: primaryColor,
-                ),
-
-                _buildDivider(borderColor),
-
-                _buildItem(
-                  key: 'my_profile',
-                  title: 'My Profile',
-                  icon: CupertinoIcons.person_crop_circle_fill,
-                  iconBg: const Color(0xFFEF4444),
-                  primaryColor: primaryColor,
-                ),
-
-                _buildDivider(borderColor),
-
-                _buildItem(
-                  key: 'general',
-                  title: 'General',
-                  icon: CupertinoIcons.gear_alt_fill,
-                  iconBg: const Color(0xFF64748B),
-                  primaryColor: primaryColor,
-                ),
-                _buildItem(
-                  key: 'notifications',
-                  title: 'Notifications and Sounds',
-                  icon: CupertinoIcons.bell_fill,
-                  iconBg: const Color(0xFFEF4444),
-                  badge: '!',
-                  primaryColor: primaryColor,
-                ),
-                _buildItem(
-                  key: 'privacy',
-                  title: 'Privacy and Security',
-                  icon: CupertinoIcons.lock_fill,
-                  iconBg: const Color(0xFF3B82F6),
-                  primaryColor: primaryColor,
-                ),
-                _buildItem(
-                  key: 'data_storage',
-                  title: 'Data and Storage',
-                  icon: CupertinoIcons.circle_grid_hex_fill,
-                  iconBg: const Color(0xFF10B981),
-                  primaryColor: primaryColor,
-                ),
-                _buildItem(
-                  key: 'active_sessions',
-                  title: 'Active Sessions',
-                  icon: CupertinoIcons.device_laptop,
-                  iconBg: const Color(0xFFF59E0B),
-                  trailingText: '4',
-                  primaryColor: primaryColor,
-                ),
-                _buildItem(
-                  key: 'appearance',
-                  title: 'Appearance',
-                  icon: CupertinoIcons.pencil,
-                  iconBg: const Color(0xFF06B6D4),
-                  primaryColor: primaryColor,
-                ),
-                _buildItem(
-                  key: 'language',
-                  title: 'Language',
-                  icon: CupertinoIcons.globe,
-                  iconBg: const Color(0xFF8B5CF6),
-                  trailingText: 'English',
-                  primaryColor: primaryColor,
-                ),
-                _buildItem(
-                  key: 'stickers',
-                  title: 'Stickers and Emoji',
-                  icon: CupertinoIcons.smiley_fill,
-                  iconBg: const Color(0xFFF97316),
-                  primaryColor: primaryColor,
-                ),
-                // ── CHAT FOLDERS ITEM (Active solid blue pill when selected) ──
-                _buildItem(
-                  key: 'chat_folders',
-                  title: 'Chat Folders',
-                  icon: CupertinoIcons.folder_fill,
-                  iconBg: const Color(0xFF2AABEE),
-                  primaryColor: primaryColor,
-                ),
-                _buildItem(
-                  key: 'update',
-                  title: 'Update',
-                  icon: CupertinoIcons.arrow_2_circlepath,
-                  iconBg: const Color(0xFF3B82F6),
-                  primaryColor: primaryColor,
-                ),
-
-                _buildDivider(borderColor),
-
-                _buildItem(
-                  key: 'premium',
-                  title: 'Telegram Premium',
-                  icon: CupertinoIcons.star_fill,
-                  iconBg: const Color(0xFF8B5CF6),
-                  primaryColor: primaryColor,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -371,3 +376,4 @@ class _DesktopSettingsListState extends State<DesktopSettingsList> {
     );
   }
 }
+
