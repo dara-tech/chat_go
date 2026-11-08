@@ -171,16 +171,18 @@ class _ChatContextMenuState extends State<ChatContextMenu> {
         ? Colors.white.withOpacity(0.10)
         : Colors.black.withOpacity(0.08);
 
-    return Stack(
-      children: [
-        // Background dismiss tap handler
-        Positioned.fill(
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () => Navigator.of(context).pop(),
-            onSecondaryTap: () => Navigator.of(context).pop(),
+    return Material(
+      type: MaterialType.transparency,
+      child: Stack(
+        children: [
+          // Background dismiss tap handler
+          Positioned.fill(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => Navigator.of(context).pop(),
+              onSecondaryTap: () => Navigator.of(context).pop(),
+            ),
           ),
-        ),
 
         // ── Main Context Menu ──
         Positioned(
@@ -353,8 +355,9 @@ class _ChatContextMenuState extends State<ChatContextMenu> {
             ),
           ),
       ],
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildInlineFolderMenu(BuildContext context, Color borderColor, Color primaryColor) {
     final controller = ChatFolderController.instance;
@@ -383,6 +386,7 @@ class _ChatContextMenuState extends State<ChatContextMenu> {
                   style: GoogleFonts.inter(
                     fontSize: 12.5,
                     color: LiquidGlassTheme.textMuted,
+                    decoration: TextDecoration.none,
                   ),
                 ),
               )
@@ -527,6 +531,7 @@ class _MenuItemState extends State<_MenuItem> {
                     fontSize: 13.5,
                     fontWeight: FontWeight.w500,
                     color: color,
+                    decoration: TextDecoration.none,
                   ),
                 ),
               ),
@@ -601,6 +606,7 @@ class _FolderSubmenu extends StatelessWidget {
                         style: GoogleFonts.inter(
                           fontSize: 12.5,
                           color: LiquidGlassTheme.textMuted,
+                          decoration: TextDecoration.none,
                         ),
                       ),
                     )
@@ -709,6 +715,7 @@ class _FolderSubmenuItemState extends State<_FolderSubmenuItem> {
                     fontSize: 13.5,
                     fontWeight: widget.isInFolder ? FontWeight.w600 : FontWeight.w500,
                     color: widget.isInFolder ? primaryColor : (isDark ? Colors.white : Colors.black87),
+                    decoration: TextDecoration.none,
                   ),
                 ),
               ),
