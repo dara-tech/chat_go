@@ -764,11 +764,7 @@ class ChatListScreenState extends State<ChatListScreen> {
                                       conv: conv,
                                       currentUser: widget.currentUser,
                                       onTap: () => _openChat(title: user.displayName, chatUser: user),
-                                      onLongPress: () => _showChatContextMenu(
-                                        Offset.zero,
-                                        user: user,
-                                        conv: conv,
-                                      ),
+                                      onLongPress: () => _showConversationOptions(user, conv),
                                       onContextMenu: (pos) => _showChatContextMenu(
                                         pos,
                                         user: user,

@@ -73,10 +73,10 @@ class _ChatListTileState extends State<ChatListTile> {
           onTapDown: (details) => _lastTapPosition = details.globalPosition,
           onSecondaryTapDown: (details) => widget.onContextMenu?.call(details.globalPosition),
           onLongPress: () {
-            if (widget.onContextMenu != null) {
+            if (widget.onLongPress != null) {
+              widget.onLongPress!();
+            } else if (widget.onContextMenu != null) {
               widget.onContextMenu!(_lastTapPosition);
-            } else {
-              widget.onLongPress?.call();
             }
           },
           child: Padding(
@@ -275,10 +275,10 @@ class _ChatListTileState extends State<ChatListTile> {
         onTapDown: (details) => _lastTapPosition = details.globalPosition,
         onSecondaryTapDown: (details) => widget.onContextMenu?.call(details.globalPosition),
         onLongPress: () {
-          if (widget.onContextMenu != null) {
+          if (widget.onLongPress != null) {
+            widget.onLongPress!();
+          } else if (widget.onContextMenu != null) {
             widget.onContextMenu!(_lastTapPosition);
-          } else {
-            widget.onLongPress?.call();
           }
         },
         child: Padding(
