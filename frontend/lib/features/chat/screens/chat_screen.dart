@@ -2029,8 +2029,16 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
     final disabledColor = theme.textMuted.withOpacity(0.35);
 
     return Container(
-      height: 52,
-      color: Colors.transparent,
+      height: 56.0,
+      decoration: BoxDecoration(
+        color: theme.scaffoldBg,
+        border: Border(
+          top: BorderSide(
+            color: theme.divider,
+            width: 0.8,
+          ),
+        ),
+      ),
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,

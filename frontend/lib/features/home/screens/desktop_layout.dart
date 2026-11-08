@@ -278,18 +278,21 @@ class _DesktopLayoutState extends State<DesktopLayout>
         _allGroups.fold<int>(0, (sum, g) => sum + g.unreadCount);
 
     return Container(
-      height: 50,
+      height: 56.0,
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF131822) : Colors.white,
         border: Border(
           top: BorderSide(
-            color: isDark ? Colors.white.withOpacity(0.06) : Colors.black.withOpacity(0.06),
+            color: isDark
+                ? Colors.white.withOpacity(0.08)
+                : LiquidGlassTheme.dividerHairline,
             width: 0.8,
           ),
         ),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           // 1. Profile (index 2)
           _buildBottomTabItem(
@@ -363,8 +366,10 @@ class _DesktopLayoutState extends State<DesktopLayout>
         });
       },
       borderRadius: BorderRadius.circular(10),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Container(
+        height: 56.0,
+        alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Stack(
           clipBehavior: Clip.none,
           children: [

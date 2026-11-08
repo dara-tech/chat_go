@@ -41,13 +41,14 @@ class ChatInputBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(14, 8, 14, 10),
+      height: 56.0,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
       decoration: BoxDecoration(
         color: LiquidGlassTheme.bgSurface,
         border: Border(
           top: BorderSide(
             color: LiquidGlassTheme.dividerHairline,
-            width: 1.0,
+            width: 0.8,
           ),
         ),
       ),
@@ -70,20 +71,22 @@ class ChatInputBar extends StatelessWidget {
   Widget _buildStandardInputBar() {
     return Container(
       key: const ValueKey('standard_input_bar'),
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      height: 42.0,
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
       decoration: BoxDecoration(
         color: LiquidGlassTheme.inputFill,
         borderRadius: BorderRadius.circular(999),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           // File & Media Attachment button
           GestureDetector(
             onTap: isUploadingMedia ? null : onShowAttachmentModal,
             behavior: HitTestBehavior.opaque,
             child: Container(
-              width: 38,
-              height: 38,
+              width: 36,
+              height: 36,
               decoration: BoxDecoration(
                 color: LiquidGlassTheme.inputFill,
                 shape: BoxShape.circle,
@@ -95,7 +98,7 @@ class ChatInputBar extends StatelessWidget {
                     )
                   : Icon(
                       CupertinoIcons.paperclip,
-                      size: 20,
+                      size: 19,
                       color: LiquidGlassTheme.textSecondary,
                     ),
             ),
@@ -120,7 +123,7 @@ class ChatInputBar extends StatelessWidget {
                 ),
                 border: InputBorder.none,
                 isDense: true,
-                contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                contentPadding: const EdgeInsets.symmetric(vertical: 6),
               ),
             ),
           ),
@@ -134,7 +137,7 @@ class ChatInputBar extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 5),
                 child: Icon(
                   CupertinoIcons.smiley,
-                  size: 23,
+                  size: 22,
                   color: LiquidGlassTheme.textSecondary,
                 ),
               ),
@@ -149,8 +152,8 @@ class ChatInputBar extends StatelessWidget {
             behavior: HitTestBehavior.opaque,
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
-              width: 38,
-              height: 38,
+              width: 36,
+              height: 36,
               decoration: BoxDecoration(
                 color: hasText
                     ? LiquidGlassTheme.accentBlue
@@ -160,7 +163,7 @@ class ChatInputBar extends StatelessWidget {
               child: Center(
                 child: Icon(
                   hasText ? CupertinoIcons.arrow_up : CupertinoIcons.mic_fill,
-                  size: 19,
+                  size: 18,
                   color: Colors.white,
                 ),
               ),
