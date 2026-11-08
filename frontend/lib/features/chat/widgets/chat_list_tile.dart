@@ -10,13 +10,14 @@ import '../../../models/chat_message.dart';
 import '../../../models/group_model.dart';
 import '../../../models/user_model.dart';
 
-class ChatListTile extends StatelessWidget {
+class ChatListTile extends StatefulWidget {
   final UserModel? user;
   final ChatGroup? group;
   final ChatConversation? conv;
   final UserModel currentUser;
   final VoidCallback onTap;
-  final VoidCallback onLongPress;
+  final VoidCallback? onLongPress;
+  final void Function(Offset position)? onContextMenu;
 
   const ChatListTile({
     super.key,
@@ -25,7 +26,8 @@ class ChatListTile extends StatelessWidget {
     this.conv,
     required this.currentUser,
     required this.onTap,
-    required this.onLongPress,
+    this.onLongPress,
+    this.onContextMenu,
   });
 
   static String formatMessageTime(DateTime? timestamp) {
@@ -47,21 +49,36 @@ class ChatListTile extends StatelessWidget {
   }
 
   @override
+  State<ChatListTile> createState() => _ChatListTileState();
+}
+
+class _ChatListTileState extends State<ChatListTile> {
+  Offset _lastTapPosition = Offset.zero;
+
+  @override
   Widget build(BuildContext context) {
-    if (group != null) {
-      final g = group!;
+    if (widget.group != null) {
+      final g = widget.group!;
       final lastMsg = g.lastMessage;
       final hasConv = lastMsg != null;
-      final isMe = lastMsg?.senderId == currentUser.id;
+      final isMe = lastMsg?.senderId == widget.currentUser.id;
       final hasUnread = g.unreadCount > 0;
       final unreadCount = g.unreadCount;
-      final timeStr = hasConv ? formatMessageTime(lastMsg.timestamp) : formatMessageTime(g.updatedAt);
+      final timeStr = hasConv ? ChatListTile.formatMessageTime(lastMsg.timestamp) : ChatListTile.formatMessageTime(g.updatedAt);
 
       return Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: onTap,
-          onLongPress: onLongPress,
+          onTap: widget.onTap,
+          onTapDown: (details) => _lastTapPosition = details.globalPosition,
+          onSecondaryTapDown: (details) => widget.onContextMenu?.call(details.globalPosition),
+          onLongPress: () {
+            if (widget.onContextMenu != null) {
+              widget.onContextMenu!(_lastTapPosition);
+            } else {
+              widget.onLongPress?.call();
+            }
+          },
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Row(
@@ -240,22 +257,30 @@ class ChatListTile extends StatelessWidget {
       );
     }
 
-    final u = user!;
-    final hasConv = conv != null && conv!.lastMessage != null;
-    final lastMsg = conv?.lastMessage;
-    final isMe = lastMsg?.senderId == currentUser.id;
+    final u = widget.user!;
+    final hasConv = widget.conv != null && widget.conv!.lastMessage != null;
+    final lastMsg = widget.conv?.lastMessage;
+    final isMe = lastMsg?.senderId == widget.currentUser.id;
     final reactionsMap = lastMsg?.reactionMap ?? {};
     final activeEmojis = reactionsMap.keys.toList();
 
-    final hasUnread = (conv?.unreadCount ?? 0) > 0;
-    final unreadCount = conv?.unreadCount ?? 0;
-    final timeStr = hasConv ? formatMessageTime(lastMsg!.timestamp) : (u.isOnline == true ? 'Online' : '');
+    final hasUnread = (widget.conv?.unreadCount ?? 0) > 0;
+    final unreadCount = widget.conv?.unreadCount ?? 0;
+    final timeStr = hasConv ? ChatListTile.formatMessageTime(lastMsg!.timestamp) : (u.isOnline == true ? 'Online' : '');
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: onTap,
-        onLongPress: onLongPress,
+        onTap: widget.onTap,
+        onTapDown: (details) => _lastTapPosition = details.globalPosition,
+        onSecondaryTapDown: (details) => widget.onContextMenu?.call(details.globalPosition),
+        onLongPress: () {
+          if (widget.onContextMenu != null) {
+            widget.onContextMenu!(_lastTapPosition);
+          } else {
+            widget.onLongPress?.call();
+          }
+        },
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
@@ -346,7 +371,7 @@ class ChatListTile extends StatelessWidget {
                               ),
                               if (ChatFolderController.instance.showFolderTags) ...[
                                 for (final f in ChatFolderController.instance
-                                    .getFoldersForChat(user: u, conv: conv)
+                                    .getFoldersForChat(user: u, conv: widget.conv)
                                     .take(2)) ...[
                                   const SizedBox(width: 5),
                                   Container(
@@ -372,7 +397,7 @@ class ChatListTile extends StatelessWidget {
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            if (conv?.isPinned == true) ...[
+                            if (widget.conv?.isPinned == true) ...[
                               Icon(
                                 CupertinoIcons.pin_fill,
                                 size: 12,
@@ -380,7 +405,7 @@ class ChatListTile extends StatelessWidget {
                               ),
                               const SizedBox(width: 4),
                             ],
-                            if (conv?.isMuted == true) ...[
+                            if (widget.conv?.isMuted == true) ...[
                               Icon(
                                 CupertinoIcons.bell_slash_fill,
                                 size: 12,
@@ -481,7 +506,7 @@ class ChatListTile extends StatelessWidget {
 
     if (lastMsg == null) {
       return Text(
-        '@${user?.username ?? ''}',
+        '@${widget.user?.username ?? ''}',
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: textStyle,

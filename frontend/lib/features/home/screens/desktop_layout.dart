@@ -146,7 +146,12 @@ class _DesktopLayoutState extends State<DesktopLayout>
         availableUsers: users.isNotEmpty ? users : _allUsers,
         availableGroups: groups.isNotEmpty ? groups : _allGroups,
         onClose: () {
-          setState(() => _activeDetailScreen = null);
+          setState(() {
+            _activeDetailScreen = null;
+            if (_selectedTab == 3) {
+              _selectedTab = 0;
+            }
+          });
         },
       );
     });

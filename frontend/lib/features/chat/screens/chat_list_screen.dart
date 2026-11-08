@@ -12,7 +12,7 @@ import '../../../models/chat_message.dart';
 import '../../../models/group_model.dart';
 import '../../../models/user_model.dart';
 import '../../settings/screens/chat_folders_settings_screen.dart';
-import '../widgets/add_to_folder_sheet.dart';
+import '../widgets/chat_context_menu.dart';
 import '../widgets/chat_folder_tabs.dart';
 import '../widgets/chat_list_tile.dart';
 import '../widgets/chat_preview_modal.dart';
@@ -376,6 +376,113 @@ class ChatListScreenState extends State<ChatListScreen> {
     }
   }
 
+  Future<void> _deleteOrLeaveGroup(ChatGroup group) async {
+    final isCreator = group.creatorId == widget.currentUser.id;
+    final confirmed = await showCupertinoDialog<bool>(
+      context: context,
+      builder: (ctx) => CupertinoAlertDialog(
+        title: Text(isCreator ? 'Delete Group' : 'Leave Group'),
+        content: Text(
+          isCreator
+              ? 'Are you sure you want to delete "${group.name}"? This action cannot be undone.'
+              : 'Are you sure you want to leave "${group.name}"?',
+        ),
+        actions: [
+          CupertinoDialogAction(
+            child: const Text('Cancel'),
+            onPressed: () => Navigator.of(ctx).pop(false),
+          ),
+          CupertinoDialogAction(
+            isDestructiveAction: true,
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(isCreator ? 'Delete' : 'Leave'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        await ApiClient.instance.leaveGroup(group.id);
+      } catch (_) {}
+      if (mounted) {
+        setState(() {
+          _groups.removeWhere((g) => g.id == group.id);
+        });
+      }
+      _fetchData();
+    }
+  }
+
+  void _showChatContextMenu(
+    Offset position, {
+    UserModel? user,
+    ChatGroup? group,
+    ChatConversation? conv,
+  }) {
+    ChatContextMenu.show(
+      context: context,
+      position: position,
+      user: user,
+      group: group,
+      conv: conv,
+      currentUser: widget.currentUser,
+      onOpenChat: () {
+        if (group != null) {
+          _openGroupChat(group);
+        } else if (user != null) {
+          _openChat(
+            title: user.displayName.isNotEmpty ? user.displayName : user.username,
+            chatUser: user,
+          );
+        }
+      },
+      onTogglePin: () async {
+        final id = group != null ? 'group_${group.id}' : (conv?.conversationId ?? 'chat_${user!.id}');
+        await LocalChatStorage.instance.togglePin(id);
+        _fetchData();
+      },
+      onToggleMute: () async {
+        final id = group != null ? 'group_${group.id}' : (conv?.conversationId ?? 'chat_${user!.id}');
+        await LocalChatStorage.instance.toggleMute(id);
+        _fetchData();
+      },
+      onToggleRead: () async {
+        if (user != null) {
+          await LocalChatStorage.instance.markConversationAsRead(user.id);
+        } else if (group != null) {
+          setState(() {
+            final idx = _groups.indexWhere((g) => g.id == group.id);
+            if (idx != -1) {
+              _groups[idx] = _groups[idx].copyWith(unreadCount: 0);
+            }
+          });
+        }
+        _fetchData();
+      },
+      onPreview: () {
+        if (user != null) {
+          _showConversationOptions(user, conv);
+        } else if (group != null) {
+          _openGroupChat(group);
+        }
+      },
+      onClearHistory: () async {
+        if (user != null) {
+          await LocalChatStorage.instance.clearChat(user.id);
+          _fetchData();
+        }
+      },
+      onDelete: () {
+        if (group != null) {
+          _deleteOrLeaveGroup(group);
+        } else if (user != null) {
+          _confirmDeleteChat(user);
+        }
+      },
+    );
+  }
+
   Future<void> _openSearchScreen() async {
     await Navigator.of(context).push(
       CupertinoPageRoute(
@@ -640,7 +747,14 @@ class ChatListScreenState extends State<ChatListScreen> {
                                         group: g,
                                         currentUser: widget.currentUser,
                                         onTap: () => _openGroupChat(g),
-                                        onLongPress: () => AddToFolderSheet.show(context, group: g),
+                                        onLongPress: () => _showChatContextMenu(
+                                          Offset.zero,
+                                          group: g,
+                                        ),
+                                        onContextMenu: (pos) => _showChatContextMenu(
+                                          pos,
+                                          group: g,
+                                        ),
                                       );
                                     }
                                     final user = item.user!;
@@ -650,7 +764,16 @@ class ChatListScreenState extends State<ChatListScreen> {
                                       conv: conv,
                                       currentUser: widget.currentUser,
                                       onTap: () => _openChat(title: user.displayName, chatUser: user),
-                                      onLongPress: () => _showConversationOptions(user, conv),
+                                      onLongPress: () => _showChatContextMenu(
+                                        Offset.zero,
+                                        user: user,
+                                        conv: conv,
+                                      ),
+                                      onContextMenu: (pos) => _showChatContextMenu(
+                                        pos,
+                                        user: user,
+                                        conv: conv,
+                                      ),
                                     );
                                   },
                                 ),

@@ -175,13 +175,6 @@ class _ChatFoldersSettingsScreenState extends State<ChatFoldersSettingsScreen> {
                 color: LiquidGlassTheme.textPrimary,
               ),
             ),
-            actions: [
-              if (widget.onClose != null)
-                IconButton(
-                  icon: const Icon(CupertinoIcons.clear),
-                  onPressed: widget.onClose,
-                ),
-            ],
           ),
           body: Center(
             child: ConstrainedBox(
