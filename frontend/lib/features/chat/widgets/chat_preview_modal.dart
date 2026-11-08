@@ -4,11 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import 'add_to_folder_sheet.dart';
 import '../../../core/api/api_client.dart';
+import '../../../core/services/chat_folder_controller.dart';
 import '../../../core/storage/local_chat_storage.dart';
 import '../../../core/theme/liquid_glass_theme.dart';
 import '../../../core/theme/theme_controller.dart';
+import '../../../models/chat_folder_model.dart';
 import '../../../models/chat_message.dart';
 import '../../../models/user_model.dart';
 import 'chat_message_bubble.dart';
@@ -95,6 +96,7 @@ class ChatPreviewModal extends StatefulWidget {
 class _ChatPreviewModalState extends State<ChatPreviewModal> {
   List<Map<String, dynamic>> _messages = [];
   bool _isLoading = true;
+  bool _showFolderSubmenu = false;
 
   @override
   void initState() {
@@ -504,7 +506,7 @@ class _ChatPreviewModalState extends State<ChatPreviewModal> {
     );
   }
 
-  /// Context Menu matching our app's design system
+  /// Context Menu matching our app's design system & Telegram mobile peek action card
   Widget _buildActionMenu(
     BuildContext context, {
     required ThemeController theme,
@@ -512,6 +514,10 @@ class _ChatPreviewModalState extends State<ChatPreviewModal> {
     required bool isMuted,
     required int unreadCount,
   }) {
+    if (_showFolderSubmenu) {
+      return _buildFolderSubmenu(context, theme: theme);
+    }
+
     final cardBg = theme.cardBg.withOpacity(0.96);
     final textColor = theme.textPrimary;
 
@@ -543,10 +549,8 @@ class _ChatPreviewModalState extends State<ChatPreviewModal> {
                 icon: CupertinoIcons.folder_badge_plus,
                 label: 'Add to Folder',
                 textColor: textColor,
-                onTap: () {
-                  Navigator.of(context).pop();
-                  AddToFolderSheet.show(context, user: widget.partnerUser);
-                },
+                hasChevron: true,
+                onTap: () => setState(() => _showFolderSubmenu = true),
               ),
               Divider(height: 1, thickness: 0.5, color: theme.divider),
               _buildMenuItem(
@@ -594,12 +598,145 @@ class _ChatPreviewModalState extends State<ChatPreviewModal> {
     );
   }
 
+  /// Folder submenu matching Telegram iOS peek action card (with Back row and checkmarks)
+  Widget _buildFolderSubmenu(
+    BuildContext context, {
+    required ThemeController theme,
+  }) {
+    final cardBg = theme.cardBg.withOpacity(0.96);
+    final textColor = theme.textPrimary;
+    final controller = ChatFolderController.instance;
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(18),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+        child: Container(
+          width: 235,
+          decoration: BoxDecoration(
+            color: cardBg,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: theme.border,
+              width: 0.8,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.20),
+                blurRadius: 24,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: ListenableBuilder(
+            listenable: controller,
+            builder: (context, _) {
+              final folders = controller.customFolders;
+
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Back row
+                  _buildMenuItem(
+                    icon: CupertinoIcons.arrow_left,
+                    label: 'Back',
+                    textColor: textColor,
+                    onTap: () => setState(() => _showFolderSubmenu = false),
+                  ),
+                  Divider(height: 1, thickness: 0.5, color: theme.divider),
+
+                  if (folders.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      child: Text(
+                        'No custom folders',
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          color: theme.textSecondary,
+                        ),
+                      ),
+                    )
+                  else
+                    for (int i = 0; i < folders.length; i++) ...[
+                      if (i > 0)
+                        Divider(height: 1, thickness: 0.5, color: theme.divider),
+                      () {
+                        final folder = folders[i];
+                        final isInFolder = controller.isChatInFolder(
+                          folder.id,
+                          userId: widget.partnerUser.id,
+                        );
+                        return _buildFolderRow(
+                          folder: folder,
+                          isInFolder: isInFolder,
+                          theme: theme,
+                          onTap: () async {
+                            await controller.toggleChatInFolder(
+                              folder.id,
+                              userId: widget.partnerUser.id,
+                            );
+                          },
+                        );
+                      }(),
+                    ],
+                ],
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFolderRow({
+    required ChatFolder folder,
+    required bool isInFolder,
+    required ThemeController theme,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            Icon(
+              folder.iconData,
+              size: 19,
+              color: isInFolder ? theme.primaryColor : theme.textPrimary,
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                folder.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: isInFolder ? FontWeight.w600 : FontWeight.w500,
+                  color: isInFolder ? theme.primaryColor : theme.textPrimary,
+                ),
+              ),
+            ),
+            if (isInFolder)
+              Icon(
+                CupertinoIcons.checkmark,
+                size: 15,
+                color: theme.primaryColor,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildMenuItem({
     required IconData icon,
     required String label,
     required Color textColor,
     required VoidCallback onTap,
     bool isDestructive = false,
+    bool hasChevron = false,
   }) {
     return InkWell(
       onTap: onTap,
@@ -623,6 +760,12 @@ class _ChatPreviewModalState extends State<ChatPreviewModal> {
                 ),
               ),
             ),
+            if (hasChevron)
+              Icon(
+                CupertinoIcons.chevron_right,
+                size: 14,
+                color: textColor.withOpacity(0.5),
+              ),
           ],
         ),
       ),

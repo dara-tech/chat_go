@@ -99,6 +99,7 @@ class ChatContextMenu extends StatefulWidget {
 
 class _ChatContextMenuState extends State<ChatContextMenu> {
   String? _activeSubmenu; // 'folder' or null
+  bool _showInlineFolders = false;
   final GlobalKey _addFolderKey = GlobalKey();
   double _folderItemTop = 0;
 
@@ -121,6 +122,7 @@ class _ChatContextMenuState extends State<ChatContextMenu> {
     const double menuWidth = 220;
     const double submenuWidth = 180;
     const double estimatedMenuHeight = 360;
+    final bool isCompactScreen = screenSize.width < 500;
 
     // Calculate main menu position so it never overflows screen bounds
     double left = widget.position.dx;
@@ -135,11 +137,28 @@ class _ChatContextMenuState extends State<ChatContextMenu> {
     }
     if (top < 16) top = 16;
 
-    // Check if submenu should appear on left or right
+    // Clamped submenu position that never clips offscreen
     final bool openSubmenuOnLeft = (left + menuWidth + submenuWidth) > (screenSize.width - 16);
-    final double submenuLeft = openSubmenuOnLeft
-        ? (left - submenuWidth - 4)
-        : (left + menuWidth + 4);
+    double submenuLeft;
+    if (openSubmenuOnLeft) {
+      submenuLeft = left - submenuWidth - 4;
+      if (submenuLeft < 10) {
+        if (left + menuWidth + submenuWidth + 10 <= screenSize.width) {
+          submenuLeft = left + menuWidth + 4;
+        } else {
+          submenuLeft = 10;
+        }
+      }
+    } else {
+      submenuLeft = left + menuWidth + 4;
+      if (submenuLeft + submenuWidth > screenSize.width - 10) {
+        if (left - submenuWidth - 4 >= 10) {
+          submenuLeft = left - submenuWidth - 4;
+        } else {
+          submenuLeft = screenSize.width - submenuWidth - 10;
+        }
+      }
+    }
 
     final isPinned = widget.conv?.isPinned ?? false;
     final isMuted = widget.conv?.isMuted ?? false;
@@ -186,132 +205,140 @@ class _ChatContextMenuState extends State<ChatContextMenu> {
                   ],
                 ),
                 padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 5),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // 1. Open In Window
-                    _MenuItem(
-                      icon: CupertinoIcons.arrow_up_right_square,
-                      label: 'Open In Window',
-                      onHover: () => setState(() => _activeSubmenu = null),
-                      onTap: () {
-                        Navigator.of(context).pop();
-                        widget.onOpenChat();
-                      },
-                    ),
+                child: _showInlineFolders
+                    ? _buildInlineFolderMenu(context, borderColor, primaryColor)
+                    : Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // 1. Open In Window
+                          _MenuItem(
+                            icon: CupertinoIcons.arrow_up_right_square,
+                            label: 'Open In Window',
+                            onHover: () => setState(() => _activeSubmenu = null),
+                            onTap: () {
+                              Navigator.of(context).pop();
+                              widget.onOpenChat();
+                            },
+                          ),
 
-                    // 2. Pin / Unpin
-                    _MenuItem(
-                      icon: isPinned ? CupertinoIcons.pin_slash : CupertinoIcons.pin,
-                      label: isPinned ? 'Unpin' : 'Pin',
-                      onHover: () => setState(() => _activeSubmenu = null),
-                      onTap: () {
-                        Navigator.of(context).pop();
-                        widget.onTogglePin();
-                      },
-                    ),
+                          // 2. Pin / Unpin
+                          _MenuItem(
+                            icon: isPinned ? CupertinoIcons.pin_slash : CupertinoIcons.pin,
+                            label: isPinned ? 'Unpin' : 'Pin',
+                            onHover: () => setState(() => _activeSubmenu = null),
+                            onTap: () {
+                              Navigator.of(context).pop();
+                              widget.onTogglePin();
+                            },
+                          ),
 
-                    // 3. Mute / Unmute
-                    _MenuItem(
-                      icon: isMuted ? CupertinoIcons.bell : CupertinoIcons.bell_slash,
-                      label: isMuted ? 'Unmute' : 'Mute',
-                      onHover: () => setState(() => _activeSubmenu = null),
-                      onTap: () {
-                        Navigator.of(context).pop();
-                        widget.onToggleMute();
-                      },
-                    ),
+                          // 3. Mute / Unmute
+                          _MenuItem(
+                            icon: isMuted ? CupertinoIcons.bell : CupertinoIcons.bell_slash,
+                            label: isMuted ? 'Unmute' : 'Mute',
+                            onHover: () => setState(() => _activeSubmenu = null),
+                            onTap: () {
+                              Navigator.of(context).pop();
+                              widget.onToggleMute();
+                            },
+                          ),
 
-                    // 4. Mark As Read / Unread
-                    _MenuItem(
-                      icon: unreadCount > 0 ? CupertinoIcons.checkmark_circle : CupertinoIcons.chat_bubble,
-                      label: unreadCount > 0 ? 'Mark As Read' : 'Mark As Unread',
-                      onHover: () => setState(() => _activeSubmenu = null),
-                      onTap: () {
-                        Navigator.of(context).pop();
-                        widget.onToggleRead();
-                      },
-                    ),
+                          // 4. Mark As Read / Unread
+                          _MenuItem(
+                            icon: unreadCount > 0 ? CupertinoIcons.checkmark_circle : CupertinoIcons.chat_bubble,
+                            label: unreadCount > 0 ? 'Mark As Read' : 'Mark As Unread',
+                            onHover: () => setState(() => _activeSubmenu = null),
+                            onTap: () {
+                              Navigator.of(context).pop();
+                              widget.onToggleRead();
+                            },
+                          ),
 
-                    // 5. Preview
-                    _MenuItem(
-                      icon: CupertinoIcons.eye,
-                      label: 'Preview',
-                      onHover: () => setState(() => _activeSubmenu = null),
-                      onTap: () {
-                        Navigator.of(context).pop();
-                        widget.onPreview();
-                      },
-                    ),
+                          // 5. Preview
+                          _MenuItem(
+                            icon: CupertinoIcons.eye,
+                            label: 'Preview',
+                            onHover: () => setState(() => _activeSubmenu = null),
+                            onTap: () {
+                              Navigator.of(context).pop();
+                              widget.onPreview();
+                            },
+                          ),
 
-                    _divider(borderColor),
+                          _divider(borderColor),
 
-                    // 6. Add to folder... > (HOVER OPENS SUBMENU)
-                    Container(
-                      key: _addFolderKey,
-                      child: _MenuItem(
-                        icon: CupertinoIcons.folder_badge_plus,
-                        label: 'Add to folder...',
-                        hasSubmenu: true,
-                        isHighlighted: _activeSubmenu == 'folder',
-                        onHover: () {
-                          _updateFolderItemPosition();
-                          setState(() => _activeSubmenu = 'folder');
-                        },
-                        onTap: () {
-                          _updateFolderItemPosition();
-                          setState(() {
-                            _activeSubmenu = (_activeSubmenu == 'folder') ? null : 'folder';
-                          });
-                        },
+                          // 6. Add to folder... > (HOVER OPENS SUBMENU ON DESKTOP, TAP FLIPS TO INLINE ON MOBILE)
+                          Container(
+                            key: _addFolderKey,
+                            child: _MenuItem(
+                              icon: CupertinoIcons.folder_badge_plus,
+                              label: 'Add to folder...',
+                              hasSubmenu: true,
+                              isHighlighted: _activeSubmenu == 'folder' || _showInlineFolders,
+                              onHover: () {
+                                if (!isCompactScreen) {
+                                  _updateFolderItemPosition();
+                                  setState(() => _activeSubmenu = 'folder');
+                                }
+                              },
+                              onTap: () {
+                                if (isCompactScreen) {
+                                  setState(() => _showInlineFolders = true);
+                                } else {
+                                  _updateFolderItemPosition();
+                                  setState(() {
+                                    _activeSubmenu = (_activeSubmenu == 'folder') ? null : 'folder';
+                                  });
+                                }
+                              },
+                            ),
+                          ),
+
+                          // 7. Remove From Folder
+                          _MenuItem(
+                            icon: CupertinoIcons.folder_badge_minus,
+                            label: 'Remove From Folder',
+                            onHover: () => setState(() => _activeSubmenu = null),
+                            onTap: () {
+                              Navigator.of(context).pop();
+                              _removeFromAllFolders();
+                            },
+                          ),
+
+                          _divider(borderColor),
+
+                          // 8. Clear History
+                          _MenuItem(
+                            icon: CupertinoIcons.trash,
+                            label: 'Clear History',
+                            onHover: () => setState(() => _activeSubmenu = null),
+                            onTap: () {
+                              Navigator.of(context).pop();
+                              widget.onClearHistory?.call();
+                            },
+                          ),
+
+                          // 9. Delete Chat / Leave
+                          _MenuItem(
+                            icon: CupertinoIcons.trash,
+                            label: widget.group != null ? 'Delete and Leave' : 'Delete Chat',
+                            textColor: const Color(0xFFFF453A),
+                            isDestructive: true,
+                            onHover: () => setState(() => _activeSubmenu = null),
+                            onTap: () {
+                              Navigator.of(context).pop();
+                              widget.onDelete();
+                            },
+                          ),
+                        ],
                       ),
-                    ),
-
-                    // 7. Remove From Folder
-                    _MenuItem(
-                      icon: CupertinoIcons.folder_badge_minus,
-                      label: 'Remove From Folder',
-                      onHover: () => setState(() => _activeSubmenu = null),
-                      onTap: () {
-                        Navigator.of(context).pop();
-                        _removeFromAllFolders();
-                      },
-                    ),
-
-                    _divider(borderColor),
-
-                    // 8. Clear History
-                    _MenuItem(
-                      icon: CupertinoIcons.trash,
-                      label: 'Clear History',
-                      onHover: () => setState(() => _activeSubmenu = null),
-                      onTap: () {
-                        Navigator.of(context).pop();
-                        widget.onClearHistory?.call();
-                      },
-                    ),
-
-                    // 9. Delete Chat / Leave
-                    _MenuItem(
-                      icon: CupertinoIcons.trash,
-                      label: widget.group != null ? 'Delete and Leave' : 'Delete Chat',
-                      textColor: const Color(0xFFFF453A),
-                      isDestructive: true,
-                      onHover: () => setState(() => _activeSubmenu = null),
-                      onTap: () {
-                        Navigator.of(context).pop();
-                        widget.onDelete();
-                      },
-                    ),
-                  ],
-                ),
               ),
             ),
           ),
         ),
 
-        // ── Submenu: Folder List (Opened when hovering on "Add to folder...") ──
-        if (_activeSubmenu == 'folder')
+        // ── Submenu: Floating Folder List (Opened when hovering on "Add to folder..." on desktop) ──
+        if (_activeSubmenu == 'folder' && !isCompactScreen && !_showInlineFolders)
           Positioned(
             left: submenuLeft,
             top: _folderItemTop > 0 ? _folderItemTop - 4 : top + 150,
@@ -326,6 +353,78 @@ class _ChatContextMenuState extends State<ChatContextMenu> {
             ),
           ),
       ],
+    );
+  }
+
+  Widget _buildInlineFolderMenu(BuildContext context, Color borderColor, Color primaryColor) {
+    final controller = ChatFolderController.instance;
+
+    return ListenableBuilder(
+      listenable: controller,
+      builder: (context, _) {
+        final folders = controller.customFolders;
+
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _MenuItem(
+              icon: CupertinoIcons.arrow_left,
+              label: 'Back',
+              onTap: () => setState(() => _showInlineFolders = false),
+              onHover: () {},
+            ),
+            _divider(borderColor),
+            if (folders.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+                child: Text(
+                  'No custom folders',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.inter(
+                    fontSize: 12.5,
+                    color: LiquidGlassTheme.textMuted,
+                  ),
+                ),
+              )
+            else
+              ...folders.map((folder) {
+                final isInFolder = controller.isChatInFolder(
+                  folder.id,
+                  userId: widget.user?.id,
+                  groupId: widget.group?.id,
+                );
+
+                return _FolderSubmenuItem(
+                  folder: folder,
+                  isInFolder: isInFolder,
+                  primaryColor: primaryColor,
+                  onTap: () async {
+                    final messenger = ScaffoldMessenger.of(context);
+                    final willBeInFolder = !isInFolder;
+                    await controller.toggleChatInFolder(
+                      folder.id,
+                      userId: widget.user?.id,
+                      groupId: widget.group?.id,
+                    );
+
+                    messenger.clearSnackBars();
+                    messenger.showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          willBeInFolder
+                              ? 'Added to "${folder.name}"'
+                              : 'Removed from "${folder.name}"',
+                        ),
+                        duration: const Duration(seconds: 1),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  },
+                );
+              }),
+          ],
+        );
+      },
     );
   }
 
@@ -468,78 +567,85 @@ class _FolderSubmenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = ChatFolderController.instance;
-    final folders = controller.customFolders;
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-        child: Container(
-          width: width,
-          decoration: BoxDecoration(
-            color: menuBg,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: borderColor, width: 0.8),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.28),
-                blurRadius: 20,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
-          padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 4),
-          child: folders.isEmpty
-              ? Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-                  child: Text(
-                    'No custom folders',
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.inter(
-                      fontSize: 12.5,
-                      color: LiquidGlassTheme.textMuted,
-                    ),
+    return ListenableBuilder(
+      listenable: controller,
+      builder: (context, _) {
+        final folders = controller.customFolders;
+
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+            child: Container(
+              width: width,
+              decoration: BoxDecoration(
+                color: menuBg,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: borderColor, width: 0.8),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.28),
+                    blurRadius: 20,
+                    offset: const Offset(0, 6),
                   ),
-                )
-              : Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: folders.map((folder) {
-                    final isInFolder = controller.isChatInFolder(
-                      folder.id,
-                      userId: user?.id,
-                      groupId: group?.id,
-                    );
-
-                    return _FolderSubmenuItem(
-                      folder: folder,
-                      isInFolder: isInFolder,
-                      primaryColor: primaryColor,
-                      onTap: () async {
-                        final messenger = ScaffoldMessenger.of(context);
-                        await controller.toggleChatInFolder(
+                ],
+              ),
+              padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 4),
+              child: folders.isEmpty
+                  ? Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                      child: Text(
+                        'No custom folders',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.inter(
+                          fontSize: 12.5,
+                          color: LiquidGlassTheme.textMuted,
+                        ),
+                      ),
+                    )
+                  : Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: folders.map((folder) {
+                        final isInFolder = controller.isChatInFolder(
                           folder.id,
                           userId: user?.id,
                           groupId: group?.id,
                         );
-                        onClose();
 
-                        messenger.showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              isInFolder
-                                  ? 'Removed from "${folder.name}"'
-                                  : 'Added to "${folder.name}"',
-                            ),
-                            duration: const Duration(seconds: 2),
-                            behavior: SnackBarBehavior.floating,
-                          ),
+                        return _FolderSubmenuItem(
+                          folder: folder,
+                          isInFolder: isInFolder,
+                          primaryColor: primaryColor,
+                          onTap: () async {
+                            final messenger = ScaffoldMessenger.of(context);
+                            final willBeInFolder = !isInFolder;
+                            await controller.toggleChatInFolder(
+                              folder.id,
+                              userId: user?.id,
+                              groupId: group?.id,
+                            );
+
+                            messenger.clearSnackBars();
+                            messenger.showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  willBeInFolder
+                                      ? 'Added to "${folder.name}"'
+                                      : 'Removed from "${folder.name}"',
+                                ),
+                                duration: const Duration(seconds: 1),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          },
                         );
-                      },
-                    );
-                  }).toList(),
-                ),
-        ),
-      ),
+                      }).toList(),
+                    ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
