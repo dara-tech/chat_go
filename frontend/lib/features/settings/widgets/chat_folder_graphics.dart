@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/theme_controller.dart';
+
 /// Renders the Telegram-style illustrated folder with colored document tabs.
 class ChatFolderHeroGraphic extends StatelessWidget {
   final double size;
@@ -129,11 +131,17 @@ class TabsViewMockupCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const activeColor = Color(0xFF38BDF8);
-    final borderColor = isSelected ? activeColor : const Color(0xFF334155);
+    final activeColor = ThemeController.instance.primaryColor;
+    final cardBg = ThemeController.instance.cardBg;
+    final scaffoldBg = ThemeController.instance.scaffoldBg;
+    final border = ThemeController.instance.border;
+    final textMuted = ThemeController.instance.textMuted;
+    final isDark = ThemeController.instance.isDark;
+
+    final borderColor = isSelected ? activeColor : border;
     final bgColor = isSelected
-        ? activeColor.withOpacity(0.08)
-        : const Color(0xFF1E293B).withOpacity(0.6);
+        ? activeColor.withOpacity(0.12)
+        : (isDark ? cardBg : Colors.white);
 
     return InkWell(
       onTap: onTap,
@@ -156,19 +164,19 @@ class TabsViewMockupCard extends StatelessWidget {
             Container(
               height: 96,
               decoration: BoxDecoration(
-                color: const Color(0xFF0F172A),
+                color: scaffoldBg,
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
                   color: isSelected
                       ? activeColor.withOpacity(0.5)
-                      : Colors.white.withOpacity(0.1),
+                      : border,
                   width: 0.8,
                 ),
               ),
               clipBehavior: Clip.antiAlias,
               child: isTabsOnLeft
-                  ? _buildLeftTabsDiagram(activeColor)
-                  : _buildTopTabsDiagram(activeColor),
+                  ? _buildLeftTabsDiagram(activeColor, cardBg, border)
+                  : _buildTopTabsDiagram(activeColor, cardBg, border),
             ),
             const SizedBox(height: 10),
             Text(
@@ -176,7 +184,7 @@ class TabsViewMockupCard extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12.5,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                color: isSelected ? activeColor : const Color(0xFF94A3B8),
+                color: isSelected ? activeColor : textMuted,
               ),
             ),
           ],
@@ -185,17 +193,17 @@ class TabsViewMockupCard extends StatelessWidget {
     );
   }
 
-  Widget _buildTopTabsDiagram(Color activeColor) {
+  Widget _buildTopTabsDiagram(Color activeColor, Color cardBg, Color border) {
     return Column(
       children: [
         // Top tabs bar
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
           decoration: BoxDecoration(
-            color: const Color(0xFF1E293B),
+            color: cardBg,
             border: Border(
               bottom: BorderSide(
-                color: Colors.white.withOpacity(0.06),
+                color: border,
                 width: 0.5,
               ),
             ),
@@ -282,7 +290,7 @@ class TabsViewMockupCard extends StatelessWidget {
     );
   }
 
-  Widget _buildLeftTabsDiagram(Color activeColor) {
+  Widget _buildLeftTabsDiagram(Color activeColor, Color cardBg, Color border) {
     return Row(
       children: [
         // Left Tabs rail
@@ -290,10 +298,10 @@ class TabsViewMockupCard extends StatelessWidget {
           width: 22,
           padding: const EdgeInsets.symmetric(vertical: 6),
           decoration: BoxDecoration(
-            color: const Color(0xFF1E293B),
+            color: cardBg,
             border: Border(
               right: BorderSide(
-                color: Colors.white.withOpacity(0.06),
+                color: border,
                 width: 0.5,
               ),
             ),

@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/services/chat_folder_controller.dart';
-import '../../../core/theme/liquid_glass_theme.dart';
 import '../../../core/theme/theme_controller.dart';
 import '../../../models/group_model.dart';
 import '../../../models/user_model.dart';
@@ -42,12 +41,16 @@ class AddToFolderSheet extends StatelessWidget {
       builder: (context, _) {
         final controller = ChatFolderController.instance;
         final folders = controller.customFolders;
-        final isDark = ThemeController.instance.isDark;
         final primaryColor = ThemeController.instance.primaryColor;
+        final cardBg = ThemeController.instance.cardBg;
+        final dividerColor = ThemeController.instance.divider;
+        final textPrimary = ThemeController.instance.textPrimary;
+        final textSecondary = ThemeController.instance.textSecondary;
+        final textMuted = ThemeController.instance.textMuted;
 
         return Container(
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E2430) : Colors.white,
+            color: cardBg,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           ),
           padding: const EdgeInsets.only(bottom: 24),
@@ -77,7 +80,7 @@ class AddToFolderSheet extends StatelessWidget {
                             style: GoogleFonts.outfit(
                               fontSize: 17,
                               fontWeight: FontWeight.w600,
-                              color: LiquidGlassTheme.textPrimary,
+                              color: textPrimary,
                             ),
                           ),
                           const SizedBox(height: 2),
@@ -85,7 +88,7 @@ class AddToFolderSheet extends StatelessWidget {
                             title,
                             style: GoogleFonts.inter(
                               fontSize: 13,
-                              color: LiquidGlassTheme.textSecondary,
+                              color: textSecondary,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -95,14 +98,14 @@ class AddToFolderSheet extends StatelessWidget {
                     ),
                     IconButton(
                       icon: const Icon(CupertinoIcons.clear_circled_solid),
-                      color: LiquidGlassTheme.textMuted,
+                      color: textMuted,
                       onPressed: () => Navigator.of(context).pop(),
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 10),
-              const Divider(height: 1),
+              Divider(height: 1, color: dividerColor),
               if (folders.isEmpty)
                 Padding(
                   padding: const EdgeInsets.all(24),
@@ -110,7 +113,7 @@ class AddToFolderSheet extends StatelessWidget {
                     'No custom folders created yet.',
                     style: GoogleFonts.inter(
                       fontSize: 14,
-                      color: LiquidGlassTheme.textSecondary,
+                      color: textSecondary,
                     ),
                   ),
                 )
@@ -120,7 +123,7 @@ class AddToFolderSheet extends StatelessWidget {
                     shrinkWrap: true,
                     physics: const BouncingScrollPhysics(),
                     itemCount: folders.length,
-                    separatorBuilder: (_, _) => const Divider(height: 1, indent: 56),
+                    separatorBuilder: (_, _) => Divider(height: 1, indent: 56, color: dividerColor),
                     itemBuilder: (context, index) {
                       final folder = folders[index];
                       final isSelected = controller.isChatInFolder(
@@ -150,7 +153,7 @@ class AddToFolderSheet extends StatelessWidget {
                           style: GoogleFonts.inter(
                             fontSize: 15,
                             fontWeight: FontWeight.w500,
-                            color: LiquidGlassTheme.textPrimary,
+                            color: textPrimary,
                           ),
                         ),
                         onChanged: (_) {
@@ -164,7 +167,7 @@ class AddToFolderSheet extends StatelessWidget {
                     },
                   ),
                 ),
-              const Divider(height: 1),
+              Divider(height: 1, color: dividerColor),
               ListTile(
                 leading: Icon(CupertinoIcons.folder_badge_plus, color: primaryColor),
                 title: Text(
@@ -175,7 +178,7 @@ class AddToFolderSheet extends StatelessWidget {
                     color: primaryColor,
                   ),
                 ),
-                trailing: const Icon(CupertinoIcons.chevron_right, size: 14),
+                trailing: Icon(CupertinoIcons.chevron_right, size: 14, color: textMuted),
                 onTap: () {
                   Navigator.of(context).pop();
                   Navigator.of(context).push(

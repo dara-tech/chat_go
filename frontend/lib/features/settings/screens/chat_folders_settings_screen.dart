@@ -4,7 +4,6 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/services/chat_folder_controller.dart';
 import '../../../core/storage/local_chat_storage.dart';
-import '../../../core/theme/liquid_glass_theme.dart';
 import '../../../core/theme/theme_controller.dart';
 import '../../../models/chat_folder_model.dart';
 import '../../../models/chat_message.dart';
@@ -68,22 +67,20 @@ class _ChatFoldersSettingsScreenState extends State<ChatFoldersSettingsScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: ThemeController.instance.isDark
-            ? const Color(0xFF1E2430)
-            : Colors.white,
+        backgroundColor: ThemeController.instance.cardBg,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           'Delete Folder',
           style: GoogleFonts.outfit(
             fontWeight: FontWeight.w600,
-            color: LiquidGlassTheme.textPrimary,
+            color: ThemeController.instance.textPrimary,
           ),
         ),
         content: Text(
           'Are you sure you want to delete "${folder.name}"? The chats inside will not be deleted.',
           style: GoogleFonts.inter(
             fontSize: 14,
-            color: LiquidGlassTheme.textSecondary,
+            color: ThemeController.instance.textSecondary,
           ),
         ),
         actions: [
@@ -91,7 +88,7 @@ class _ChatFoldersSettingsScreenState extends State<ChatFoldersSettingsScreen> {
             onPressed: () => Navigator.of(ctx).pop(),
             child: Text(
               'Cancel',
-              style: GoogleFonts.inter(color: LiquidGlassTheme.textSecondary),
+              style: GoogleFonts.inter(color: ThemeController.instance.textSecondary),
             ),
           ),
           ElevatedButton(
@@ -144,20 +141,21 @@ class _ChatFoldersSettingsScreenState extends State<ChatFoldersSettingsScreen> {
       builder: (context, _) {
         final isDark = ThemeController.instance.isDark;
         final primaryColor = ThemeController.instance.primaryColor;
+        final scaffoldBg = ThemeController.instance.scaffoldBg;
+        final textPrimary = ThemeController.instance.textPrimary;
+        final textSecondary = ThemeController.instance.textSecondary;
         final controller = ChatFolderController.instance;
 
         // Custom folders list (excluding the built-in all_chats tab)
         final folders = controller.customFolders;
 
         return Scaffold(
-          backgroundColor: isDark
-              ? const Color(0xFF0F172A)
-              : ThemeController.instance.scaffoldBg,
+          backgroundColor: scaffoldBg,
           appBar: AppBar(
             backgroundColor: Colors.transparent,
             elevation: 0,
             leading: IconButton(
-              icon: const Icon(CupertinoIcons.back),
+              icon: Icon(CupertinoIcons.back, color: textPrimary),
               onPressed: () {
                 if (widget.onClose != null) {
                   widget.onClose!();
@@ -172,7 +170,7 @@ class _ChatFoldersSettingsScreenState extends State<ChatFoldersSettingsScreen> {
               style: GoogleFonts.outfit(
                 fontSize: 17,
                 fontWeight: FontWeight.w600,
-                color: LiquidGlassTheme.textPrimary,
+                color: textPrimary,
               ),
             ),
           ),
@@ -197,7 +195,7 @@ class _ChatFoldersSettingsScreenState extends State<ChatFoldersSettingsScreen> {
                         textAlign: TextAlign.center,
                         style: GoogleFonts.inter(
                           fontSize: 13.5,
-                          color: LiquidGlassTheme.textSecondary,
+                          color: textSecondary,
                           height: 1.35,
                         ),
                       ),
@@ -266,7 +264,7 @@ class _ChatFoldersSettingsScreenState extends State<ChatFoldersSettingsScreen> {
           style: GoogleFonts.inter(
             fontSize: 12,
             fontWeight: FontWeight.w600,
-            color: LiquidGlassTheme.textSecondary,
+            color: ThemeController.instance.textSecondary,
             letterSpacing: 0.5,
           ),
         ),
@@ -283,7 +281,7 @@ class _ChatFoldersSettingsScreenState extends State<ChatFoldersSettingsScreen> {
           text,
           style: GoogleFonts.inter(
             fontSize: 12,
-            color: LiquidGlassTheme.textMuted,
+            color: ThemeController.instance.textMuted,
             height: 1.3,
           ),
         ),
@@ -298,10 +296,12 @@ class _ChatFoldersSettingsScreenState extends State<ChatFoldersSettingsScreen> {
     required ChatFolderController controller,
     required List<ChatFolder> folders,
   }) {
-    final cardBg = isDark ? const Color(0xFF1E2430) : Colors.white;
-    final borderColor = isDark
-        ? Colors.white.withOpacity(0.08)
-        : Colors.black.withOpacity(0.06);
+    final cardBg = ThemeController.instance.cardBg;
+    final borderColor = ThemeController.instance.border;
+    final dividerColor = ThemeController.instance.divider;
+    final textPrimary = ThemeController.instance.textPrimary;
+    final textSecondary = ThemeController.instance.textSecondary;
+    final textMuted = ThemeController.instance.textMuted;
 
     return Container(
       decoration: BoxDecoration(
@@ -352,7 +352,7 @@ class _ChatFoldersSettingsScreenState extends State<ChatFoldersSettingsScreen> {
                                 width: 24,
                                 child: Icon(
                                   folder.iconData,
-                                  color: isDark ? Colors.white70 : Colors.black87,
+                                  color: textSecondary,
                                   size: 21,
                                 ),
                               ),
@@ -365,7 +365,7 @@ class _ChatFoldersSettingsScreenState extends State<ChatFoldersSettingsScreen> {
                                   style: GoogleFonts.inter(
                                     fontSize: 15,
                                     fontWeight: FontWeight.w400,
-                                    color: LiquidGlassTheme.textPrimary,
+                                    color: textPrimary,
                                   ),
                                 ),
                               ),
@@ -376,7 +376,7 @@ class _ChatFoldersSettingsScreenState extends State<ChatFoldersSettingsScreen> {
                                   '$count',
                                   style: GoogleFonts.inter(
                                     fontSize: 14,
-                                    color: isDark ? Colors.white54 : Colors.black45,
+                                    color: textMuted,
                                   ),
                                 ),
                                 const SizedBox(width: 6),
@@ -386,7 +386,7 @@ class _ChatFoldersSettingsScreenState extends State<ChatFoldersSettingsScreen> {
                               Icon(
                                 CupertinoIcons.chevron_right,
                                 size: 14,
-                                color: isDark ? Colors.white30 : Colors.black26,
+                                color: textMuted.withOpacity(0.5),
                               ),
                             ],
                           ),
@@ -396,7 +396,7 @@ class _ChatFoldersSettingsScreenState extends State<ChatFoldersSettingsScreen> {
                             height: 1,
                             thickness: 0.6,
                             indent: 52,
-                            color: borderColor,
+                            color: dividerColor,
                           ),
                       ],
                     ),
@@ -410,7 +410,7 @@ class _ChatFoldersSettingsScreenState extends State<ChatFoldersSettingsScreen> {
               height: 1,
               thickness: 0.6,
               indent: 0,
-              color: borderColor,
+              color: dividerColor,
             ),
 
           // ── "Add a Custom Folder" Row (matching Telegram native) ──
@@ -438,7 +438,7 @@ class _ChatFoldersSettingsScreenState extends State<ChatFoldersSettingsScreen> {
                     Icon(
                       CupertinoIcons.chevron_right,
                       size: 14,
-                      color: isDark ? Colors.white30 : Colors.black26,
+                      color: textMuted.withOpacity(0.5),
                     ),
                   ],
                 ),
@@ -457,6 +457,7 @@ class _ChatFoldersSettingsScreenState extends State<ChatFoldersSettingsScreen> {
   ) {
     showMenu(
       context: context,
+      color: ThemeController.instance.cardBg,
       position: RelativeRect.fromLTRB(
         position.dx,
         position.dy,
@@ -468,9 +469,12 @@ class _ChatFoldersSettingsScreenState extends State<ChatFoldersSettingsScreen> {
           value: 'edit',
           child: Row(
             children: [
-              const Icon(CupertinoIcons.pencil, size: 16),
+              Icon(CupertinoIcons.pencil, size: 16, color: ThemeController.instance.textPrimary),
               const SizedBox(width: 10),
-              Text('Edit "${folder.name}"', style: GoogleFonts.inter(fontSize: 14)),
+              Text(
+                'Edit "${folder.name}"',
+                style: GoogleFonts.inter(fontSize: 14, color: ThemeController.instance.textPrimary),
+              ),
             ],
           ),
         ),
@@ -502,10 +506,9 @@ class _ChatFoldersSettingsScreenState extends State<ChatFoldersSettingsScreen> {
     required Color primaryColor,
     required ChatFolderController controller,
   }) {
-    final cardBg = isDark ? const Color(0xFF1E2430) : Colors.white;
-    final borderColor = isDark
-        ? Colors.white.withOpacity(0.08)
-        : Colors.black.withOpacity(0.06);
+    final cardBg = ThemeController.instance.cardBg;
+    final borderColor = ThemeController.instance.border;
+    final textPrimary = ThemeController.instance.textPrimary;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -522,7 +525,7 @@ class _ChatFoldersSettingsScreenState extends State<ChatFoldersSettingsScreen> {
             style: GoogleFonts.inter(
               fontSize: 15,
               fontWeight: FontWeight.w500,
-              color: LiquidGlassTheme.textPrimary,
+              color: textPrimary,
             ),
           ),
           CupertinoSwitch(
@@ -540,10 +543,8 @@ class _ChatFoldersSettingsScreenState extends State<ChatFoldersSettingsScreen> {
     required Color primaryColor,
     required ChatFolderController controller,
   }) {
-    final cardBg = isDark ? const Color(0xFF1E2430) : Colors.white;
-    final borderColor = isDark
-        ? Colors.white.withOpacity(0.08)
-        : Colors.black.withOpacity(0.06);
+    final cardBg = ThemeController.instance.cardBg;
+    final borderColor = ThemeController.instance.border;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),

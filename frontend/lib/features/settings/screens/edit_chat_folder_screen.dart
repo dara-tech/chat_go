@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/services/chat_folder_controller.dart';
-import '../../../core/theme/liquid_glass_theme.dart';
 import '../../../core/theme/theme_controller.dart';
 import '../../../models/chat_folder_model.dart';
 import '../../../models/group_model.dart';
@@ -158,91 +157,94 @@ class _EditChatFolderScreenState extends State<EditChatFolderScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = ThemeController.instance.isDark;
-    final primaryColor = ThemeController.instance.primaryColor;
-    final borderColor = isDark
-        ? Colors.white.withOpacity(0.08)
-        : Colors.black.withOpacity(0.06);
+    return ListenableBuilder(
+      listenable: ThemeController.instance,
+      builder: (context, _) {
+        final isDark = ThemeController.instance.isDark;
+        final primaryColor = ThemeController.instance.primaryColor;
+        final scaffoldBg = ThemeController.instance.scaffoldBg;
+        final borderColor = ThemeController.instance.border;
+        final textPrimary = ThemeController.instance.textPrimary;
 
-    return Scaffold(
-      backgroundColor: isDark
-          ? const Color(0xFF0F172A)
-          : ThemeController.instance.scaffoldBg,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(CupertinoIcons.back),
-          onPressed: _handleBack,
-        ),
-        title: Text(
-          isEditing ? 'Edit Folder' : 'New Folder',
-          style: GoogleFonts.outfit(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: LiquidGlassTheme.textPrimary,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: _save,
-            child: Text(
-              isEditing ? 'Done' : 'Create',
-              style: GoogleFonts.inter(
-                fontSize: 15,
+        return Scaffold(
+          backgroundColor: scaffoldBg,
+          appBar: AppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            centerTitle: true,
+            leading: IconButton(
+              icon: Icon(CupertinoIcons.back, color: textPrimary),
+              onPressed: _handleBack,
+            ),
+            title: Text(
+              isEditing ? 'Edit Folder' : 'New Folder',
+              style: GoogleFonts.outfit(
+                fontSize: 18,
                 fontWeight: FontWeight.w600,
-                color: primaryColor,
+                color: textPrimary,
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: _save,
+                child: Text(
+                  isEditing ? 'Done' : 'Create',
+                  style: GoogleFonts.inter(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: primaryColor,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+            ],
+          ),
+          body: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 580),
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // ── Name & Icon Input Card ──
+                    _buildNameAndIconCard(isDark, primaryColor, borderColor),
+                    const SizedBox(height: 24),
+
+                    // ── Included Section ──
+                    _buildSectionHeader('INCLUDED CHATS'),
+                    _buildIncludedCard(isDark, primaryColor, borderColor),
+                    const SizedBox(height: 24),
+
+                    // ── Excluded Section ──
+                    _buildSectionHeader('EXCLUDED CHATS'),
+                    _buildExcludedCard(isDark, primaryColor, borderColor),
+                    const SizedBox(height: 32),
+
+                    // ── Delete Button ──
+                    if (isEditing)
+                      Center(
+                        child: TextButton.icon(
+                          onPressed: _delete,
+                          icon: const Icon(CupertinoIcons.trash, color: Color(0xFFEF4444)),
+                          label: Text(
+                            'Delete Folder',
+                            style: GoogleFonts.inter(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFFEF4444),
+                            ),
+                          ),
+                        ),
+                      ),
+                    const SizedBox(height: 40),
+                  ],
+                ),
               ),
             ),
           ),
-          const SizedBox(width: 8),
-        ],
-      ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 580),
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // ── Name & Icon Input Card ──
-                _buildNameAndIconCard(isDark, primaryColor, borderColor),
-                const SizedBox(height: 24),
-
-                // ── Included Section ──
-                _buildSectionHeader('INCLUDED CHATS'),
-                _buildIncludedCard(isDark, primaryColor, borderColor),
-                const SizedBox(height: 24),
-
-                // ── Excluded Section ──
-                _buildSectionHeader('EXCLUDED CHATS'),
-                _buildExcludedCard(isDark, primaryColor, borderColor),
-                const SizedBox(height: 32),
-
-                // ── Delete Button ──
-                if (isEditing)
-                  Center(
-                    child: TextButton.icon(
-                      onPressed: _delete,
-                      icon: const Icon(CupertinoIcons.trash, color: Color(0xFFEF4444)),
-                      label: Text(
-                        'Delete Folder',
-                        style: GoogleFonts.inter(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFFEF4444),
-                        ),
-                      ),
-                    ),
-                  ),
-                const SizedBox(height: 40),
-              ],
-            ),
-          ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -254,7 +256,7 @@ class _EditChatFolderScreenState extends State<EditChatFolderScreen> {
         style: GoogleFonts.inter(
           fontSize: 12,
           fontWeight: FontWeight.w600,
-          color: LiquidGlassTheme.textSecondary,
+          color: ThemeController.instance.textSecondary,
           letterSpacing: 0.5,
         ),
       ),
@@ -262,7 +264,11 @@ class _EditChatFolderScreenState extends State<EditChatFolderScreen> {
   }
 
   Widget _buildNameAndIconCard(bool isDark, Color primaryColor, Color borderColor) {
-    final cardBg = isDark ? const Color(0xFF1E2430) : Colors.white;
+    final cardBg = ThemeController.instance.cardBg;
+    final dividerColor = ThemeController.instance.divider;
+    final textPrimary = ThemeController.instance.textPrimary;
+    final textMuted = ThemeController.instance.textMuted;
+    final inputFill = ThemeController.instance.inputFill;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -299,13 +305,13 @@ class _EditChatFolderScreenState extends State<EditChatFolderScreen> {
                   style: GoogleFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
-                    color: LiquidGlassTheme.textPrimary,
+                    color: textPrimary,
                   ),
                   decoration: InputDecoration(
                     hintText: 'Folder Name',
                     hintStyle: GoogleFonts.inter(
                       fontSize: 16,
-                      color: LiquidGlassTheme.textMuted,
+                      color: textMuted,
                     ),
                     border: InputBorder.none,
                     isDense: true,
@@ -316,14 +322,14 @@ class _EditChatFolderScreenState extends State<EditChatFolderScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          Divider(height: 1, color: borderColor),
+          Divider(height: 1, color: dividerColor),
           const SizedBox(height: 12),
           Text(
             'CHOOSE ICON',
             style: GoogleFonts.inter(
               fontSize: 11,
               fontWeight: FontWeight.w600,
-              color: LiquidGlassTheme.textMuted,
+              color: textMuted,
             ),
           ),
           const SizedBox(height: 10),
@@ -340,9 +346,7 @@ class _EditChatFolderScreenState extends State<EditChatFolderScreen> {
                   width: 38,
                   height: 38,
                   decoration: BoxDecoration(
-                    color: isSelected
-                        ? primaryColor
-                        : (isDark ? Colors.white.withOpacity(0.06) : Colors.black.withOpacity(0.04)),
+                    color: isSelected ? primaryColor : inputFill,
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
                       color: isSelected ? primaryColor : Colors.transparent,
@@ -352,7 +356,7 @@ class _EditChatFolderScreenState extends State<EditChatFolderScreen> {
                     entry.value,
                     color: isSelected
                         ? Colors.white
-                        : (isDark ? Colors.white70 : Colors.black87),
+                        : ThemeController.instance.textSecondary,
                     size: 19,
                   ),
                 ),
@@ -388,7 +392,7 @@ class _EditChatFolderScreenState extends State<EditChatFolderScreen> {
                       style: GoogleFonts.inter(
                         fontSize: 15,
                         fontWeight: FontWeight.w500,
-                        color: LiquidGlassTheme.textPrimary,
+                        color: ThemeController.instance.textPrimary,
                       ),
                     ),
                     if (subtitle != null) ...[
@@ -397,7 +401,7 @@ class _EditChatFolderScreenState extends State<EditChatFolderScreen> {
                         subtitle,
                         style: GoogleFonts.inter(
                           fontSize: 12,
-                          color: LiquidGlassTheme.textMuted,
+                          color: ThemeController.instance.textMuted,
                         ),
                       ),
                     ],
@@ -413,13 +417,13 @@ class _EditChatFolderScreenState extends State<EditChatFolderScreen> {
           ),
         ),
         if (!isLast)
-          Divider(height: 1, indent: 16, color: borderColor),
+          Divider(height: 1, indent: 16, color: ThemeController.instance.divider),
       ],
     );
   }
 
   Widget _buildIncludedCard(bool isDark, Color primaryColor, Color borderColor) {
-    final cardBg = isDark ? const Color(0xFF1E2430) : Colors.white;
+    final cardBg = ThemeController.instance.cardBg;
 
     return Container(
       decoration: BoxDecoration(
@@ -479,14 +483,14 @@ class _EditChatFolderScreenState extends State<EditChatFolderScreen> {
                       '${_includedUserIds.length + _includedGroupIds.length} added',
                       style: GoogleFonts.inter(
                         fontSize: 13,
-                        color: LiquidGlassTheme.textSecondary,
+                        color: ThemeController.instance.textSecondary,
                       ),
                     ),
                   const SizedBox(width: 4),
                   Icon(
                     CupertinoIcons.chevron_right,
                     size: 14,
-                    color: LiquidGlassTheme.textMuted,
+                    color: ThemeController.instance.textMuted,
                   ),
                 ],
               ),
@@ -498,7 +502,7 @@ class _EditChatFolderScreenState extends State<EditChatFolderScreen> {
   }
 
   Widget _buildExcludedCard(bool isDark, Color primaryColor, Color borderColor) {
-    final cardBg = isDark ? const Color(0xFF1E2430) : Colors.white;
+    final cardBg = ThemeController.instance.cardBg;
 
     return Container(
       decoration: BoxDecoration(
@@ -548,14 +552,14 @@ class _EditChatFolderScreenState extends State<EditChatFolderScreen> {
                       '${_excludedUserIds.length + _excludedGroupIds.length} excluded',
                       style: GoogleFonts.inter(
                         fontSize: 13,
-                        color: LiquidGlassTheme.textSecondary,
+                        color: ThemeController.instance.textSecondary,
                       ),
                     ),
                   const SizedBox(width: 4),
                   Icon(
                     CupertinoIcons.chevron_right,
                     size: 14,
-                    color: LiquidGlassTheme.textMuted,
+                    color: ThemeController.instance.textMuted,
                   ),
                 ],
               ),
@@ -601,8 +605,12 @@ class _ChatPickerSheetState extends State<_ChatPickerSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = ThemeController.instance.isDark;
     final primaryColor = ThemeController.instance.primaryColor;
+    final cardBg = ThemeController.instance.cardBg;
+    final textPrimary = ThemeController.instance.textPrimary;
+    final textSecondary = ThemeController.instance.textSecondary;
+    final textMuted = ThemeController.instance.textMuted;
+    final inputFill = ThemeController.instance.inputFill;
 
     final filteredUsers = widget.users.where((u) {
       if (_search.isEmpty) return true;
@@ -618,7 +626,7 @@ class _ChatPickerSheetState extends State<_ChatPickerSheet> {
     return Container(
       height: MediaQuery.of(context).size.height * 0.75,
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E2430) : Colors.white,
+        color: cardBg,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
@@ -643,14 +651,14 @@ class _ChatPickerSheetState extends State<_ChatPickerSheet> {
               children: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: Text('Cancel', style: GoogleFonts.inter(color: LiquidGlassTheme.textSecondary)),
+                  child: Text('Cancel', style: GoogleFonts.inter(color: textSecondary)),
                 ),
                 Text(
                   'Choose Chats',
                   style: GoogleFonts.outfit(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: LiquidGlassTheme.textPrimary,
+                    color: textPrimary,
                   ),
                 ),
                 TextButton(
@@ -676,16 +684,16 @@ class _ChatPickerSheetState extends State<_ChatPickerSheet> {
             child: Container(
               height: 38,
               decoration: BoxDecoration(
-                color: isDark ? Colors.white.withOpacity(0.06) : Colors.black.withOpacity(0.04),
+                color: inputFill,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: TextField(
                 onChanged: (v) => setState(() => _search = v.trim().toLowerCase()),
-                style: GoogleFonts.inter(fontSize: 14, color: LiquidGlassTheme.textPrimary),
+                style: GoogleFonts.inter(fontSize: 14, color: textPrimary),
                 decoration: InputDecoration(
-                  prefixIcon: Icon(CupertinoIcons.search, size: 16, color: LiquidGlassTheme.textMuted),
+                  prefixIcon: Icon(CupertinoIcons.search, size: 16, color: textMuted),
                   hintText: 'Search chats...',
-                  hintStyle: GoogleFonts.inter(fontSize: 14, color: LiquidGlassTheme.textMuted),
+                  hintStyle: GoogleFonts.inter(fontSize: 14, color: textMuted),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(vertical: 9),
                 ),
@@ -703,7 +711,7 @@ class _ChatPickerSheetState extends State<_ChatPickerSheet> {
                     padding: const EdgeInsets.only(top: 8, bottom: 4),
                     child: Text(
                       'USERS',
-                      style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: LiquidGlassTheme.textMuted),
+                      style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: textMuted),
                     ),
                   ),
                   ...filteredUsers.map((u) {
@@ -718,11 +726,11 @@ class _ChatPickerSheetState extends State<_ChatPickerSheet> {
                           style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold),
                         ),
                       ),
-                      title: Text(u.displayName, style: GoogleFonts.inter(fontSize: 14.5, color: LiquidGlassTheme.textPrimary)),
-                      subtitle: Text('@${u.username}', style: GoogleFonts.inter(fontSize: 12, color: LiquidGlassTheme.textMuted)),
+                      title: Text(u.displayName, style: GoogleFonts.inter(fontSize: 14.5, color: textPrimary)),
+                      subtitle: Text('@${u.username}', style: GoogleFonts.inter(fontSize: 12, color: textMuted)),
                       trailing: Icon(
                         isChecked ? CupertinoIcons.checkmark_circle_fill : CupertinoIcons.circle,
-                        color: isChecked ? primaryColor : LiquidGlassTheme.textMuted,
+                        color: isChecked ? primaryColor : textMuted,
                       ),
                       onTap: () {
                         setState(() {
@@ -742,7 +750,7 @@ class _ChatPickerSheetState extends State<_ChatPickerSheet> {
                     padding: const EdgeInsets.only(top: 12, bottom: 4),
                     child: Text(
                       'GROUPS',
-                      style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: LiquidGlassTheme.textMuted),
+                      style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: textMuted),
                     ),
                   ),
                   ...filteredGroups.map((g) {
@@ -754,11 +762,11 @@ class _ChatPickerSheetState extends State<_ChatPickerSheet> {
                         backgroundColor: primaryColor.withOpacity(0.15),
                         child: Icon(CupertinoIcons.person_2_fill, color: primaryColor, size: 18),
                       ),
-                      title: Text(g.name, style: GoogleFonts.inter(fontSize: 14.5, color: LiquidGlassTheme.textPrimary)),
-                      subtitle: Text('${g.members.length} members', style: GoogleFonts.inter(fontSize: 12, color: LiquidGlassTheme.textMuted)),
+                      title: Text(g.name, style: GoogleFonts.inter(fontSize: 14.5, color: textPrimary)),
+                      subtitle: Text('${g.members.length} members', style: GoogleFonts.inter(fontSize: 12, color: textMuted)),
                       trailing: Icon(
                         isChecked ? CupertinoIcons.checkmark_circle_fill : CupertinoIcons.circle,
-                        color: isChecked ? primaryColor : LiquidGlassTheme.textMuted,
+                        color: isChecked ? primaryColor : textMuted,
                       ),
                       onTap: () {
                         setState(() {

@@ -116,7 +116,6 @@ class _ChatContextMenuState extends State<ChatContextMenu> {
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
-    final isDark = ThemeController.instance.isDark;
     final primaryColor = ThemeController.instance.primaryColor;
 
     const double menuWidth = 220;
@@ -164,12 +163,8 @@ class _ChatContextMenuState extends State<ChatContextMenu> {
     final isMuted = widget.conv?.isMuted ?? false;
     final unreadCount = widget.conv?.unreadCount ?? widget.group?.unreadCount ?? 0;
 
-    final menuBg = isDark
-        ? const Color(0xFF1E2430).withOpacity(0.95)
-        : Colors.white.withOpacity(0.96);
-    final borderColor = isDark
-        ? Colors.white.withOpacity(0.10)
-        : Colors.black.withOpacity(0.08);
+    final menuBg = ThemeController.instance.cardBg.withOpacity(0.96);
+    final borderColor = ThemeController.instance.border;
 
     return Material(
       type: MaterialType.transparency,
@@ -497,7 +492,7 @@ class _MenuItemState extends State<_MenuItem> {
 
     final defaultText = widget.isDestructive
         ? const Color(0xFFFF453A)
-        : (isDark ? Colors.white : Colors.black87);
+        : ThemeController.instance.textPrimary;
     final color = widget.textColor ?? defaultText;
 
     return MouseRegion(
@@ -703,7 +698,9 @@ class _FolderSubmenuItemState extends State<_FolderSubmenuItem> {
               Icon(
                 widget.folder.iconData,
                 size: 16,
-                color: widget.isInFolder ? primaryColor : (isDark ? Colors.white70 : Colors.black87),
+                color: widget.isInFolder
+                    ? primaryColor
+                    : ThemeController.instance.textSecondary,
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -714,7 +711,9 @@ class _FolderSubmenuItemState extends State<_FolderSubmenuItem> {
                   style: GoogleFonts.inter(
                     fontSize: 13.5,
                     fontWeight: widget.isInFolder ? FontWeight.w600 : FontWeight.w500,
-                    color: widget.isInFolder ? primaryColor : (isDark ? Colors.white : Colors.black87),
+                    color: widget.isInFolder
+                        ? primaryColor
+                        : ThemeController.instance.textPrimary,
                     decoration: TextDecoration.none,
                   ),
                 ),
