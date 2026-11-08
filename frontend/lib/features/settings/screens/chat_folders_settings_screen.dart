@@ -214,7 +214,9 @@ class _ChatFoldersSettingsScreenState extends State<ChatFoldersSettingsScreen> {
                       folders: folders,
                     ),
                     _buildFooterCaption(
-                      'Drag and drop folders to change order. Right click to remove.',
+                      MediaQuery.of(context).size.width >= 600
+                          ? 'Drag and drop folders to change order. Right click to remove.'
+                          : 'Drag and drop folders to change order. Tap to edit.',
                     ),
                     const SizedBox(height: 24),
 
@@ -229,16 +231,18 @@ class _ChatFoldersSettingsScreenState extends State<ChatFoldersSettingsScreen> {
                     ),
                     const SizedBox(height: 24),
 
-                    // ── Section: TABS VIEW ──
-                    _buildSectionHeader('TABS VIEW'),
-                    _buildTabsViewCard(
-                      isDark: isDark,
-                      primaryColor: primaryColor,
-                      controller: controller,
-                    ),
-                    _buildFooterCaption(
-                      'If you have many folders, try moving tabs to the left.',
-                    ),
+                    // ── Section: TABS VIEW (Desktop only) ──
+                    if (MediaQuery.of(context).size.width >= 600) ...[
+                      _buildSectionHeader('TABS VIEW'),
+                      _buildTabsViewCard(
+                        isDark: isDark,
+                        primaryColor: primaryColor,
+                        controller: controller,
+                      ),
+                      _buildFooterCaption(
+                        'If you have many folders, try moving tabs to the left.',
+                      ),
+                    ],
                     const SizedBox(height: 48),
                   ],
                 ),
@@ -343,18 +347,13 @@ class _ChatFoldersSettingsScreenState extends State<ChatFoldersSettingsScreen> {
                           ),
                           child: Row(
                             children: [
-                              // Folder Icon
-                              Container(
-                                width: 32,
-                                height: 32,
-                                decoration: BoxDecoration(
-                                  color: primaryColor.withOpacity(0.12),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
+                              // Folder Icon (matching Telegram native outline style)
+                              SizedBox(
+                                width: 24,
                                 child: Icon(
                                   folder.iconData,
-                                  color: primaryColor,
-                                  size: 17,
+                                  color: isDark ? Colors.white70 : Colors.black87,
+                                  size: 21,
                                 ),
                               ),
                               const SizedBox(width: 14),
@@ -365,31 +364,29 @@ class _ChatFoldersSettingsScreenState extends State<ChatFoldersSettingsScreen> {
                                   folder.name,
                                   style: GoogleFonts.inter(
                                     fontSize: 15,
-                                    fontWeight: FontWeight.w500,
+                                    fontWeight: FontWeight.w400,
                                     color: LiquidGlassTheme.textPrimary,
                                   ),
                                 ),
                               ),
 
                               // Chat count badge
-                              if (count > 0)
+                              if (count > 0) ...[
                                 Text(
                                   '$count',
                                   style: GoogleFonts.inter(
-                                    fontSize: 13,
-                                    color: LiquidGlassTheme.textSecondary,
+                                    fontSize: 14,
+                                    color: isDark ? Colors.white54 : Colors.black45,
                                   ),
                                 ),
-                              const SizedBox(width: 10),
+                                const SizedBox(width: 6),
+                              ],
 
-                              // Reorder drag handle
-                              ReorderableDragStartListener(
-                                index: index,
-                                child: Icon(
-                                  CupertinoIcons.bars,
-                                  color: LiquidGlassTheme.textMuted,
-                                  size: 18,
-                                ),
+                              // Chevron matching Telegram
+                              Icon(
+                                CupertinoIcons.chevron_right,
+                                size: 14,
+                                color: isDark ? Colors.white30 : Colors.black26,
                               ),
                             ],
                           ),
@@ -397,8 +394,8 @@ class _ChatFoldersSettingsScreenState extends State<ChatFoldersSettingsScreen> {
                         if (index < folders.length - 1)
                           Divider(
                             height: 1,
-                            thickness: 0.8,
-                            indent: 62,
+                            thickness: 0.6,
+                            indent: 52,
                             color: borderColor,
                           ),
                       ],
@@ -411,12 +408,12 @@ class _ChatFoldersSettingsScreenState extends State<ChatFoldersSettingsScreen> {
           if (folders.isNotEmpty)
             Divider(
               height: 1,
-              thickness: 0.8,
+              thickness: 0.6,
               indent: 0,
               color: borderColor,
             ),
 
-          // ── "Add a Custom Folder" Row ──
+          // ── "Add a Custom Folder" Row (matching Telegram native) ──
           Material(
             color: Colors.transparent,
             child: InkWell(
@@ -428,34 +425,20 @@ class _ChatFoldersSettingsScreenState extends State<ChatFoldersSettingsScreen> {
                 ),
                 child: Row(
                   children: [
-                    Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        color: primaryColor.withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(
-                        CupertinoIcons.add,
-                        color: primaryColor,
-                        size: 18,
-                      ),
-                    ),
-                    const SizedBox(width: 14),
                     Expanded(
                       child: Text(
                         'Add a Custom Folder',
                         style: GoogleFonts.inter(
                           fontSize: 15,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w500,
                           color: primaryColor,
                         ),
                       ),
                     ),
                     Icon(
                       CupertinoIcons.chevron_right,
-                      size: 15,
-                      color: LiquidGlassTheme.textMuted,
+                      size: 14,
+                      color: isDark ? Colors.white30 : Colors.black26,
                     ),
                   ],
                 ),
