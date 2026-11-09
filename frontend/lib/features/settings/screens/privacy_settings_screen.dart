@@ -9,7 +9,9 @@ import 'package:frontend/core/theme/liquid_glass_theme.dart';
 import 'package:frontend/core/theme/theme_controller.dart';
 
 class PrivacySettingsScreen extends StatefulWidget {
-  const PrivacySettingsScreen({super.key});
+  final VoidCallback? onClose;
+
+  const PrivacySettingsScreen({super.key, this.onClose});
 
   @override
   State<PrivacySettingsScreen> createState() => _PrivacySettingsScreenState();
@@ -107,7 +109,13 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
       child: Row(
         children: [
           GestureDetector(
-            onTap: () => Navigator.of(context).pop(),
+            onTap: () {
+              if (widget.onClose != null) {
+                widget.onClose!();
+              } else {
+                Navigator.of(context).maybePop();
+              }
+            },
             behavior: HitTestBehavior.opaque,
             child: Container(
               padding: const EdgeInsets.all(8),

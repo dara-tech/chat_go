@@ -7,7 +7,9 @@ import 'package:frontend/core/theme/theme_controller.dart';
 import 'package:frontend/widgets/chat_bubble_painter.dart';
 
 class ThemeSettingsScreen extends StatelessWidget {
-  const ThemeSettingsScreen({super.key});
+  final VoidCallback? onClose;
+
+  const ThemeSettingsScreen({super.key, this.onClose});
 
   @override
   Widget build(BuildContext context) {
@@ -99,7 +101,13 @@ class ThemeSettingsScreen extends StatelessWidget {
       child: Row(
         children: [
           GestureDetector(
-            onTap: () => Navigator.of(context).pop(),
+            onTap: () {
+              if (onClose != null) {
+                onClose!();
+              } else {
+                Navigator.of(context).maybePop();
+              }
+            },
             behavior: HitTestBehavior.opaque,
             child: Container(
               padding: const EdgeInsets.all(8),

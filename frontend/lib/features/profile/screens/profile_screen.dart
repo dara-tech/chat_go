@@ -16,8 +16,19 @@ import 'package:frontend/features/settings/screens/theme_settings_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   final UserModel currentUser;
+  final String title;
+  final VoidCallback? onOpenChatFolders;
+  final VoidCallback? onOpenThemeSettings;
+  final VoidCallback? onOpenPrivacySettings;
 
-  const ProfileScreen({super.key, required this.currentUser});
+  const ProfileScreen({
+    super.key,
+    required this.currentUser,
+    this.title = 'Settings',
+    this.onOpenChatFolders,
+    this.onOpenThemeSettings,
+    this.onOpenPrivacySettings,
+  });
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -255,7 +266,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
-            'Profile',
+            widget.title,
             style: GoogleFonts.outfit(
               fontSize: 28,
               fontWeight: FontWeight.w800,
@@ -493,11 +504,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
             subtitle: '${currentTheme.name} • ${currentBg.name} • ${ThemeController.instance.bubbleStyle.name}',
             showChevron: true,
             onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => const ThemeSettingsScreen(),
-                ),
-              );
+              if (widget.onOpenThemeSettings != null) {
+                widget.onOpenThemeSettings!();
+              } else {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const ThemeSettingsScreen(),
+                  ),
+                );
+              }
             },
           ),
           Divider(height: 1, thickness: 0.8, indent: 56, color: LiquidGlassTheme.dividerHairline),
@@ -508,11 +523,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
             subtitle: 'Organize chats into custom folders & tabs',
             showChevron: true,
             onTap: () {
-              Navigator.of(context).push(
-                CupertinoPageRoute(
-                  builder: (_) => const ChatFoldersSettingsScreen(),
-                ),
-              );
+              if (widget.onOpenChatFolders != null) {
+                widget.onOpenChatFolders!();
+              } else {
+                Navigator.of(context).push(
+                  CupertinoPageRoute(
+                    builder: (_) => const ChatFoldersSettingsScreen(),
+                  ),
+                );
+              }
             },
           ),
           Divider(height: 1, thickness: 0.8, indent: 56, color: LiquidGlassTheme.dividerHairline),
@@ -638,11 +657,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
             subtitle: 'GPS location, encryption & privacy',
             showChevron: true,
             onTap: () {
-              Navigator.of(context).push(
-                CupertinoPageRoute(
-                  builder: (_) => const PrivacySettingsScreen(),
-                ),
-              );
+              if (widget.onOpenPrivacySettings != null) {
+                widget.onOpenPrivacySettings!();
+              } else {
+                Navigator.of(context).push(
+                  CupertinoPageRoute(
+                    builder: (_) => const PrivacySettingsScreen(),
+                  ),
+                );
+              }
             },
           ),
         ],

@@ -19,7 +19,8 @@ import '../../contacts/screens/contacts_screen.dart';
 import '../../media/screens/media_viewer_screen.dart';
 import '../../profile/screens/profile_screen.dart';
 import '../../settings/screens/chat_folders_settings_screen.dart';
-import '../../settings/widgets/desktop_settings_list.dart';
+import '../../settings/screens/privacy_settings_screen.dart';
+import '../../settings/screens/theme_settings_screen.dart';
 
 /// Desktop layout breakpoint — screens wider than this use [DesktopLayout].
 const double kDesktopBreakpoint = 720;
@@ -36,9 +37,8 @@ class DesktopLayout extends StatefulWidget {
 class _DesktopLayoutState extends State<DesktopLayout>
     with WidgetsBindingObserver {
   // ── State ────────────────────────────────────────────────────────────────
-  // Tabs: 0 = Chats, 1 = Calls, 2 = Profile, 3 = Settings
+  // Tabs: 0 = Chats, 1 = Calls, 2 = Settings
   int _selectedTab = 0;
-  String _activeSettingsSection = 'chat_folders';
   late UserModel _currentUser;
 
   /// The active chat (right panel). Null = show placeholder.
@@ -148,9 +148,33 @@ class _DesktopLayoutState extends State<DesktopLayout>
         onClose: () {
           setState(() {
             _activeDetailScreen = null;
-            if (_selectedTab == 3) {
+            if (_selectedTab == 2) {
               _selectedTab = 0;
             }
+          });
+        },
+      );
+    });
+  }
+
+  void _openThemeSettings() {
+    setState(() {
+      _activeDetailScreen = ThemeSettingsScreen(
+        onClose: () {
+          setState(() {
+            _activeDetailScreen = null;
+          });
+        },
+      );
+    });
+  }
+
+  void _openPrivacySettings() {
+    setState(() {
+      _activeDetailScreen = PrivacySettingsScreen(
+        onClose: () {
+          setState(() {
+            _activeDetailScreen = null;
           });
         },
       );
@@ -216,8 +240,7 @@ class _DesktopLayoutState extends State<DesktopLayout>
       },
       onOpenSettings: () {
         setState(() {
-          _selectedTab = 3; // Switch to Settings tab
-          _activeSettingsSection = 'chat_folders';
+          _selectedTab = 2; // Switch to Settings tab
           _openChatFoldersSettings();
         });
       },
@@ -231,7 +254,7 @@ class _DesktopLayoutState extends State<DesktopLayout>
         // Tab body
         Expanded(child: _buildMiddleBody()),
 
-        // 4-Tab navigation bar matching Telegram macOS
+        // Navigation bar matching Telegram macOS (Calls, Chats, Settings)
         _buildMiddleBottomBar(isDark, primaryColor),
       ],
     );
@@ -253,20 +276,13 @@ class _DesktopLayoutState extends State<DesktopLayout>
           currentUser: _currentUser,
           onSelectUser: _openChatWithUser,
         );
-      case 2: // Profile
-        return ProfileScreen(currentUser: _currentUser);
-      case 3: // Settings
-        return DesktopSettingsList(
+      case 2: // Settings (with Profile Hero card at top)
+        return ProfileScreen(
           currentUser: _currentUser,
-          activeSection: _activeSettingsSection,
-          onSelectSection: (section) {
-            setState(() {
-              _activeSettingsSection = section;
-              if (section == 'chat_folders') {
-                _openChatFoldersSettings();
-              }
-            });
-          },
+          title: 'Settings',
+          onOpenChatFolders: _openChatFoldersSettings,
+          onOpenThemeSettings: _openThemeSettings,
+          onOpenPrivacySettings: _openPrivacySettings,
         );
       default:
         return const SizedBox.shrink();
@@ -294,17 +310,7 @@ class _DesktopLayoutState extends State<DesktopLayout>
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // 1. Profile (index 2)
-          _buildBottomTabItem(
-            tabIndex: 2,
-            icon: CupertinoIcons.person_crop_circle,
-            activeIcon: CupertinoIcons.person_crop_circle_fill,
-            label: 'Profile',
-            primaryColor: primaryColor,
-            isDark: isDark,
-          ),
-
-          // 2. Calls / People (index 1)
+          // 1. Calls / People (index 1)
           _buildBottomTabItem(
             tabIndex: 1,
             icon: CupertinoIcons.phone,
@@ -314,7 +320,7 @@ class _DesktopLayoutState extends State<DesktopLayout>
             isDark: isDark,
           ),
 
-          // 3. Chats (index 0)
+          // 2. Chats (index 0)
           _buildBottomTabItem(
             tabIndex: 0,
             icon: CupertinoIcons.chat_bubble_2,
@@ -325,9 +331,9 @@ class _DesktopLayoutState extends State<DesktopLayout>
             isDark: isDark,
           ),
 
-          // 4. Settings (index 3)
+          // 3. Settings (index 2)
           _buildBottomTabItem(
-            tabIndex: 3,
+            tabIndex: 2,
             icon: CupertinoIcons.gear_alt,
             activeIcon: CupertinoIcons.gear_alt_fill,
             label: 'Settings',
@@ -357,8 +363,7 @@ class _DesktopLayoutState extends State<DesktopLayout>
       onTap: () {
         setState(() {
           _selectedTab = tabIndex;
-          if (tabIndex == 3) {
-            _activeSettingsSection = 'chat_folders';
+          if (tabIndex == 2) {
             _openChatFoldersSettings();
           } else if (tabIndex == 0) {
             _activeDetailScreen = null;
